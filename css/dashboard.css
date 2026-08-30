@@ -1,0 +1,306 @@
+/*
+* Fichier: css/dashboard.css
+* Description: Stylesheet principal pour l'interface d'administration et utilisateur.
+*/
+
+/* --- Variables de Design --- */
+:root {
+    --font-primary: 'Source Sans Pro', sans-serif;
+    --font-secondary: 'Lato', sans-serif;
+    
+    --color-bg-light: #f8f9fa;
+    --color-bg-siderbar: #212529;
+    --color-bg-siderbar-hover: #343a40;
+    --color-bg-header: #ffffff;
+    --color-bg-card: #ffffff;
+
+    --color-text-light: #f8f9fa;
+    --color-text-dark: #343a40;
+    --color-text-muted: #6c757d;
+
+    --color-primary: #007bff;
+    --color-primary-dark: #0056b3;
+    --color-secondary: #6c757d;
+    --color-secondary-dark: #5a6268;
+    --color-success: #28a745;
+    --color-danger: #dc3545;
+    --color-warning: #ffc107;
+    --color-info: #17a2b8;
+
+    --border-color: #dee2e6;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --border-radius: 0.375rem; /* 6px */
+}
+
+/* --- Reset et Base --- */
+body {
+    font-family: var(--font-primary);
+    background-color: var(--color-bg-light);
+    margin: 0;
+    color: var(--color-text-dark);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-secondary);
+    font-weight: 700;
+}
+
+.page-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --- Barre Latérale (Sidebar) --- */
+.sidebar {
+    width: 240px;
+    background-color: var(--color-bg-siderbar);
+    color: var(--color-text-light);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-md);
+}
+
+.sidebar-title {
+    text-align: center;
+    padding: 20px 0;
+    margin: 0;
+    background-color: var(--color-bg-siderbar-hover);
+    font-size: 1.5em;
+    font-weight: 700;
+}
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+    flex-grow: 1;
+}
+
+.nav-list li a {
+    display: block;
+    padding: 12px 20px;
+    color: #adb5bd;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.2s, color 0.2s, padding-left 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.nav-list li a:hover {
+    background-color: var(--color-bg-siderbar-hover);
+    color: var(--color-text-light);
+    border-left: 3px solid var(--color-primary);
+}
+
+.sidebar-footer {
+    padding: 20px;
+    text-align: center;
+    background-color: var(--color-bg-siderbar-hover);
+}
+
+.sidebar-footer a {
+    color: #adb5bd;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.2s;
+}
+.sidebar-footer a:hover {
+    color: var(--color-text-light);
+}
+
+/* --- Contenu Principal --- */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    background-color: var(--color-bg-header);
+    padding: 15px 30px;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.75em;
+}
+
+.header p {
+    margin: 4px 0 0;
+    color: var(--color-text-muted);
+}
+
+.content-area {
+    padding: 30px;
+    background-color: var(--color-bg-light);
+    flex-grow: 1;
+}
+
+/* --- Composants --- */
+.card {
+    background-color: var(--color-bg-card);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 25px;
+}
+
+.card h2 {
+    margin-top: 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    font-size: 1.4em;
+}
+
+.alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-weight: 600;
+}
+
+.alert-success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+.alert-danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+
+/* --- Tableaux --- */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.table th, .table td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 15px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 700;
+    font-family: var(--font-secondary);
+}
+
+.table tr:hover {
+    background-color: #f1f3f5;
+}
+
+/* --- Formulaires --- */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.form-row .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="date"],
+.form-group input[type="time"],
+.form-group input[type="number"],
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus, .form-group select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.btn, button {
+    background-color: var(--color-primary);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s ease;
+}
+.btn:hover, button:hover { background-color: var(--color-primary-dark); }
+
+.btn-secondary { background-color: var(--color-secondary); }
+.btn-secondary:hover { background-color: var(--color-secondary-dark); }
+.btn-danger { background-color: var(--color-danger); }
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 0.875em;
+}
+
+/* --- Statuts --- */
+.status-present, .status-absent, .status-retard, .status-excusé {
+    padding: 4px 8px;
+    border-radius: var(--border-radius);
+    font-weight: 700;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    color: white;
+}
+.status-present { background-color: var(--color-success); }
+.status-absent { background-color: var(--color-danger); }
+.status-retard { background-color: var(--color-warning); color: var(--color-text-dark); }
+.status-excusé, .status-excuse { background-color: var(--color-info); }
+
+
+/* --- Styles spécifiques --- */
+.radio-label { margin-right: 15px; }
+
+.schedule-table { display: flex; flex-wrap: wrap; gap: 1rem; }
+.schedule-day {
+    flex: 1;
+    min-width: 220px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    background-color: #fdfdfd;
+}
+.schedule-day h3 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; font-size: 1.2em; }
+.schedule-day ul { padding-left: 0; list-style: none; }
+.schedule-day li {
+    background-color: var(--color-bg-light);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    border-radius: var(--border-radius);
+    font-size: 0.9em;
+    box-shadow: var(--shadow-sm);
+}
+.schedule-day li strong { font-size: 1em; color: var(--color-text-dark); }
+.schedule-day li em { color: var(--color-text-muted); }
+.schedule-day li form { float: right; }
+.schedule-day li button { background: none; border: none; color: var(--color-danger); cursor: pointer; font-size: 1.2em; padding: 0;}

@@ -1,0 +1,144 @@
+/* CHARTE GRAPHIQUE PROFESSIONNELLE - PROJET G */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --educ-navy: #1b5dcf;
+    --educ-turquoise: #39A9C3;
+    --educ-cyan: #6EC6D0;
+    --educ-green: #64B89A;
+    --educ-bg: #0080ff;
+    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--educ-bg);
+    color: #1e293b;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Animation de chargement de page */
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+/* Personnalisation Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* NAVIGATION */
+.navbar {
+    background-color: var(--educ-navy) !important;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.nav-link {
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.2s;
+}
+
+.nav-link:hover {
+    color: var(--educ-cyan) !important;
+}
+
+.nav-link.active {
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+}
+
+/* CARTES (CARDS) */
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s;
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1.25rem;
+    font-weight: 700;
+    color: var(--educ-navy);
+}
+
+/* BOUTONS */
+.btn {
+    border-radius: 10px;
+    padding: 0.6rem 1.25rem;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: var(--educ-navy);
+    border-color: var(--educ-navy);
+}
+
+.btn-primary:hover {
+    background-color: #1a2e56;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 62, 111, 0.2);
+}
+
+.btn-success {
+    background-color: var(--educ-green);
+    border-color: var(--educ-green);
+}
+
+/* TABLEAUX */
+.table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: #f1f5f9;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+    border: none;
+}
+
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+/* BADGES */
+.badge {
+    padding: 0.5em 0.8em;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* DASHBOARD SPECIFICS */
+.stat-card {
+    border-left: 5px solid var(--educ-turquoise);
+}
+
+.display-6 {
+    font-weight: 800;
+    color: var(--educ-navy);
+}

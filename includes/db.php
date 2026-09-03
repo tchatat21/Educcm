@@ -1,10 +1,10 @@
 <?php
 // Fichier : includes/db.php
-
+// mysql://root:cjaBEiUlvdeWUgNYyCzYRmhcZFvIAIOe@mysql.railway.internal:3306/gestion_scolaire
 // 1. Définition des constantes de connexion
 define('DB_SERVER', 'localhost'); // Adresse du serveur MySQL
 define('DB_USERNAME', 'root');      // Nom d'utilisateur de la base de données
-define('DB_PASSWORD', '');          // Mot de passe de la base de données
+define('DB_PASSWORD', 'cjaBEiUlvdeWUgNYyCzYRmhcZFvIAIOe');          // Mot de passe de la base de données
 define('DB_NAME', 'gestion_scolaire'); // Nom de la base de données
 
 // 2. Création de la connexion à la base de données avec mysqli

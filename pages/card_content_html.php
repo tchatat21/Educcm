@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="card-header-v2">
         <div class="logo-box-v2">
-            <img src="/G/educ.jpeg" alt="Logo" onerror="this.src='https://via.placeholder.com/100?text=LOGO'">
+            <img src="/educ.jpeg" alt="Logo" onerror="this.src='https://via.placeholder.com/100?text=LOGO'">
         </div>
         <div class="header-titles-v2">
             <h1 class="school-name-v2">EDUC.CM</h1>
@@ -27,7 +27,7 @@
                 $photo_path = "../uploads/photos/" . $photo_name;
                 
                 if (!empty($photo_name) && $photo_name !== 'default_avatar.png' && file_exists($photo_path)) {
-                    $src_photo = "/G/uploads/photos/" . $photo_name;
+                    $src_photo = "/uploads/photos/" . $photo_name;
                 } else {
                     // Avatar par défaut stylé avec les initiales
                     $src_photo = "https://ui-avatars.com/api/?name=" . urlencode($eleve['prenom'] . ' ' . $eleve['nom']) . "&background=223E6F&color=fff&size=300";

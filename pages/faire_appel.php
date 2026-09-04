@@ -153,7 +153,7 @@ $today_courses = $stmt->get_result();
                                         $photo_name = $s['photo'];
                                         $photo_path = "../uploads/photos/" . $photo_name;
                                         if (!empty($photo_name) && $photo_name !== 'default_avatar.png' && file_exists($photo_path)) {
-                                            $avatar = "/G/uploads/photos/" . $photo_name;
+                                            $avatar = "/uploads/photos/" . $photo_name;
                                         } else {
                                             $avatar = "https://ui-avatars.com/api/?name=" . urlencode($s['prenom'] . ' ' . $s['nom']) . "&background=random&color=fff";
                                         }

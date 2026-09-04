@@ -14,7 +14,7 @@ if (isset($_GET['print']) && $_GET['print'] == '1') {
     if (!$eleve) die("Erreur : Élève introuvable.");
     
     $qr_data = $eleve['qr_token'];
-    $logo_url = "/G/educ.jpeg";
+    $logo_url = "/educ.jpeg";
     $photo_final = "https://ui-avatars.com/api/?name=" . urlencode($eleve['prenom'] . '+' . $eleve['nom']) . "&size=300&background=223E6F&color=fff";
     $qr_code_url = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" . urlencode($qr_data);
     ?>
@@ -57,7 +57,7 @@ if (!$eleve) {
 }
 
 $qr_data = $eleve['qr_token'] ?: bin2hex(random_bytes(16));
-$logo_url = "/G/educ.jpeg";
+$logo_url = "/educ.jpeg";
 $photo_final = "https://ui-avatars.com/api/?name=" . urlencode($eleve['prenom'] . '+' . $eleve['nom']) . "&size=300&background=223E6F&color=fff";
 $qr_code_url = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" . urlencode($qr_data);
 ?>

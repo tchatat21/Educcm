@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Si le badge n'existe pas sur cette page, on ne fait rien
         if (!badge) return;
 
-        // Grâce à la balise <base> dans le header, le chemin est toujours relatif à la racine /G/
+        // Grâce à la balise <base> dans le header, le chemin est toujours relatif à la racine /
         const apiUrl = 'api/check_notifications.php';
         
         fetch(apiUrl)

@@ -43,7 +43,7 @@ $selected_child_id = isset($_GET['child_id']) ? (int)$_GET['child_id'] : 0;
             $retards_count = $stats['ret'] ?: 0;
             
             $status_color = ($absences_count > 3) ? 'danger' : (($absences_count > 0) ? 'warning' : 'success');
-            $avatar = !empty($child['photo']) ? "/G/uploads/photos/".$child['photo'] : "https://ui-avatars.com/api/?name=".urlencode($child['nom'])."&background=random";
+            $avatar = !empty($child['photo']) ? "/uploads/photos/".$child['photo'] : "https://ui-avatars.com/api/?name=".urlencode($child['nom'])."&background=random";
         ?>
             <div class="col-lg-6">
                 <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">

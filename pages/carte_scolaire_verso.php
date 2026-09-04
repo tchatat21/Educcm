@@ -4,7 +4,7 @@ $eleve_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 // MODE IMPRESSION : Si on demande l'impression du verso
 if (isset($_GET['print']) && $_GET['print'] == '1') {
-    $logo_url = "/G/educ.jpeg";
+    $logo_url = "/educ.jpeg";
     ?>
     <!DOCTYPE html>
     <html lang="fr">
@@ -31,7 +31,7 @@ if (isset($_GET['print']) && $_GET['print'] == '1') {
 $page_title = 'Carte Scolaire - Verso';
 include '../includes/header.php';
 
-$logo_url = "/G/educ.jpeg";
+$logo_url = "/educ.jpeg";
 ?>
 
 <div class="container py-4 text-center">

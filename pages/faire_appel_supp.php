@@ -105,7 +105,7 @@ while($row = $res_ex->fetch_assoc()) $existing[$row['eleve_id']] = $row['statut'
                     <tbody>
                         <?php while($s = $students->fetch_assoc()): 
                             $current = $existing[$s['id']] ?? 'Présent';
-                            $avatar = !empty($s['photo']) ? "/G/uploads/photos/".$s['photo'] : "https://ui-avatars.com/api/?name=".urlencode($s['nom']);
+                            $avatar = !empty($s['photo']) ? "/uploads/photos/".$s['photo'] : "https://ui-avatars.com/api/?name=".urlencode($s['nom']);
                         ?>
                             <tr>
                                 <td class="ps-4" style="width: 60px;">

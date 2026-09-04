@@ -140,7 +140,7 @@ $users_result = $conn->query("SELECT id, nom, prenom, email, role, photo FROM ut
                         $photo_path = "../uploads/photos/" . $photo_name;
                         
                         if (!empty($photo_name) && $photo_name !== 'default_avatar.png' && file_exists($photo_path)) {
-                            $avatar_url = "/G/uploads/photos/" . $photo_name;
+                            $avatar_url = "/uploads/photos/" . $photo_name;
                         } else {
                             // API de secours très fiable avec les initiales
                             $avatar_url = "https://ui-avatars.com/api/?name=" . urlencode($user['prenom'] . ' ' . $user['nom']) . "&background=random&color=fff&size=128";

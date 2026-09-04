@@ -156,7 +156,7 @@ $linked_children = $conn->query("SELECT u.id, u.nom, u.prenom FROM utilisateurs 
                                 <label class="form-label">Photo de profil / Carte</label>
                                 <div class="d-flex align-items-center gap-3">
                                     <?php if ($user['photo']): ?>
-                                        <img src="/G/uploads/photos/<?php echo $user['photo']; ?>" class="rounded shadow-sm" style="width: 60px; height: 60px; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($user['nom']); ?>'">
+                                        <img src="/uploads/photos/<?php echo $user['photo']; ?>" class="rounded shadow-sm" style="width: 60px; height: 60px; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($user['nom']); ?>'">
                                     <?php endif; ?>
                                     <input type="file" name="photo" class="form-control" accept="image/*">
                                 </div>

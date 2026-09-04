@@ -56,7 +56,7 @@ if (isset($_GET['print']) && $_GET['print'] == '1') {
             <?php foreach ($students as $eleve): 
                 $qr_data = $eleve['qr_token'] ?: bin2hex(random_bytes(16));
                 $qr_code_url = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" . urlencode($qr_data);
-                $logo_url = "/G/educ.jpeg";
+                $logo_url = "/educ.jpeg";
                 $photo_final = "https://ui-avatars.com/api/?name=" . urlencode($eleve['prenom'] . '+' . $eleve['nom']) . "&size=300&background=223E6F&color=fff";
             ?>
                 <div class="card-item-bulk">
@@ -130,7 +130,7 @@ $classes = $conn->query("SELECT id, nom FROM classes ORDER BY nom");
             foreach ($students as $eleve):
                 $qr_data = $eleve['qr_token'] ?: bin2hex(random_bytes(16));
                 $qr_code_url = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" . urlencode($qr_data);
-                $logo_url = "/G/educ.jpeg";
+                $logo_url = "/educ.jpeg";
                 $photo_final = "https://ui-avatars.com/api/?name=" . urlencode($eleve['prenom'] . '+' . $eleve['nom']) . "&size=300&background=223E6F&color=fff";
                 ?>
                 <div class="preview-item shadow-sm">

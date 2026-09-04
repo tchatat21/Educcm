@@ -154,7 +154,7 @@ $classes = $conn->query("SELECT id, nom FROM classes ORDER BY nom");
                             $photo_name = $a['photo'];
                             $photo_path = "../uploads/photos/" . $photo_name;
                             if (!empty($photo_name) && $photo_name !== 'default_avatar.png' && file_exists($photo_path)) {
-                                $avatar = "/G/uploads/photos/" . $photo_name;
+                                $avatar = "/uploads/photos/" . $photo_name;
                             } else {
                                 $avatar = "https://ui-avatars.com/api/?name=" . urlencode($a['prenom'] . ' ' . $a['nom']) . "&background=random&color=fff";
                             }

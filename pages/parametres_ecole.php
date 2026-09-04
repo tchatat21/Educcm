@@ -53,7 +53,7 @@ while ($row = $res->fetch_assoc()) {
     $settings[$row['setting_key']] = $row['setting_value'];
 }
 
-$stamp_url = !empty($settings['school_stamp']) ? "/G/uploads/school/" . $settings['school_stamp'] : "";
+$stamp_url = !empty($settings['school_stamp']) ? "/uploads/school/" . $settings['school_stamp'] : "";
 ?>
 
 <div class="row mb-4">

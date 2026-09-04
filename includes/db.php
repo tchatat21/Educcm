@@ -26,39 +26,47 @@ function getEnvVar($key, $default = null)
 $host = getEnvVar('MYSQLHOST');
 $user = getEnvVar('MYSQLUSER');
 $pass = getEnvVar('MYSQLPASSWORD');
-$db   = getEnvVar('MYSQLDATABASE');
+$db = getEnvVar('MYSQLDATABASE');
 $port = getEnvVar('MYSQLPORT', 3306);
 
 if (empty($host)) {
     $databaseUrl = getEnvVar('DATABASE_URL') ?: getEnvVar('MYSQL_URL') ?: getEnvVar('MYSQL_PUBLIC_URL');
     if (!empty($databaseUrl)) {
         $parsed = parse_url($databaseUrl);
-        $host = $parsed['host']  ?? null;
-        $user = $parsed['user']  ?? null;
-        $pass = $parsed['pass']  ?? null;
-        $port = $parsed['port']  ?? 3306;
+        $host = $parsed['host'] ?? null;
+        $user = $parsed['user'] ?? null;
+        $pass = $parsed['pass'] ?? null;
+        $port = $parsed['port'] ?? 3306;
         // Le nom de la base est dans le chemin, ex: /dbname → dbname
-        $db   = isset($parsed['path']) ? ltrim($parsed['path'], '/') : null;
+        $db = isset($parsed['path']) ? ltrim($parsed['path'], '/') : null;
     }
 }
 
 // --- VÉRIFICATION DE SÉCURITÉ ---
 if (empty($host)) {
     // Diagnostic détaillé pour faciliter le débogage
-    $debug  = "ERREUR : Impossible de lire les variables d'environnement Railway.\n\n";
+    $debug = "ERREUR : Impossible de lire les variables d'environnement Railway.\n\n";
     $debug .= "Variables attendues : MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE, MYSQLPORT\n";
     $debug .= "Ou : DATABASE_URL / MYSQL_URL\n\n";
     $debug .= "Vérifiez que ces variables sont bien définies dans Railway → Variables.\n";
     $debug .= "variables_order PHP actuel : " . ini_get('variables_order') . "\n";
-    die(nl2br(htmlspecialchars($debug)));
+    // die(nl2br(htmlspecialchars($debug)));
+nl2br(htmlspecialchars($debug));
+    define('DB_SERVER', 'localhost');
+    define('DB_USERNAME', 'root');
+    define('DB_PASSWORD', '');
+    define('DB_NAME', 'gestion_scolaire');
+    define('DB_PORT', 3306);
+} else {
+    define('DB_SERVER', $host);
+    define('DB_USERNAME', $user);
+    define('DB_PASSWORD', $pass);
+    define('DB_NAME', $db);
+    define('DB_PORT', $port);
 }
 // --------------------------------
 
-define('DB_SERVER', $host);
-define('DB_USERNAME', $user);
-define('DB_PASSWORD', $pass);
-define('DB_NAME', $db);
-define('DB_PORT', $port);
+
 
 // 3. Création de la connexion à la base de données avec mysqli
 $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME, (int) DB_PORT);

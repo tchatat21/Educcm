@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : ven. 20 fév. 2026 à 23:13
+-- Généré le : jeu. 12 mars 2026 à 08:04
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -282,6 +282,28 @@ INSERT INTO `presences_supplementaires` (`id`, `cours_supp_id`, `eleve_id`, `sta
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `settings`
+--
+
+CREATE TABLE `settings` (
+  `setting_key` varchar(50) NOT NULL,
+  `setting_value` text DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `settings`
+--
+
+INSERT INTO `settings` (`setting_key`, `setting_value`, `updated_at`) VALUES
+('school_stamp', '', '2026-03-11 21:16:12'),
+('stamp_right', '2', '2026-03-11 21:16:12'),
+('stamp_size', '12', '2026-03-11 21:16:12'),
+('stamp_top', '-8', '2026-03-11 21:16:12');
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `utilisateurs`
 --
 
@@ -408,6 +430,12 @@ ALTER TABLE `presences_supplementaires`
   ADD PRIMARY KEY (`id`),
   ADD KEY `cours_supp_id` (`cours_supp_id`),
   ADD KEY `eleve_id` (`eleve_id`);
+
+--
+-- Index pour la table `settings`
+--
+ALTER TABLE `settings`
+  ADD PRIMARY KEY (`setting_key`);
 
 --
 -- Index pour la table `utilisateurs`

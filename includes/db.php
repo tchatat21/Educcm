@@ -1,23 +1,49 @@
 <?php
 // Fichier : includes/db.php
 
-// 1. Récupération des constantes via les variables d'environnement de Railway (avec valeurs par défaut pour le local)
-define('DB_SERVER', getenv('MYSQLHOST') ?: 'localhost');
-define('DB_USERNAME', getenv('MYSQLUSER') ?: 'root');
-define('DB_PASSWORD', getenv('MYSQLPASSWORD') ?: '');
-define('DB_NAME', getenv('MYSQLDATABASE') ?: 'gestion_scolaire');
-define('DB_PORT', getenv('MYSQLPORT') ?: 3306);
+// Fichier : includes/db.php
 
-// 2. Création de la connexion à la base de données avec mysqli (en incluant le port)
-$conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME, (int)DB_PORT);
+// 1. Fonction utilitaire pour lire les variables d'environnement de façon 100% fiable
+function getEnvVar($key, $default = null)
+{
+    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '')
+        return $_SERVER[$key];
+    if (isset($_ENV[$key]) && $_ENV[$key] !== '')
+        return $_ENV[$key];
+    $val = getenv($key);
+    if ($val !== false && $val !== '')
+        return $val;
+    return $default;
+}
 
-// 3. Vérification de la connexion
+// 2. Récupération des constantes (sans fallback sur localhost pour forcer l'erreur si vide)
+$host = getEnvVar('MYSQLHOST');
+$user = getEnvVar('MYSQLUSER');
+$pass = getEnvVar('MYSQLPASSWORD');
+$db = getEnvVar('MYSQLDATABASE');
+$port = getEnvVar('MYSQLPORT', 3306);
+
+// --- VÉRIFICATION DE SÉCURITÉ ---
+if (empty($host)) {
+    die("ERREUR CRITIQUE : PHP n'arrive toujours pas à lire les variables d'environnement sur Railway.");
+}
+// --------------------------------
+
+define('DB_SERVER', $host);
+define('DB_USERNAME', $user);
+define('DB_PASSWORD', $pass);
+define('DB_NAME', $db);
+define('DB_PORT', $port);
+
+// 3. Création de la connexion à la base de données avec mysqli
+$conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME, (int) DB_PORT);
+
+// 4. Vérification de la connexion
 if ($conn->connect_error) {
-    // Si la connexion échoue, on arrête le script et on affiche une erreur.
     die("ERREUR : La connexion à la base de données a échoué. " . $conn->connect_error);
 }
 
-// 4. Définir le jeu de caractères en UTF-8
+// 5. Définir le jeu de caractères en UTF-8
 $conn->set_charset("utf8mb4");
 
 // --- AUTO-RÉPARATION DE LA BASE DE DONNÉES ---

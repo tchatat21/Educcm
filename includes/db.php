@@ -1,12 +1,12 @@
 <?php
 // Fichier : includes/db.php
-
+// mysql://root:dElLkGOSThJTGJgCMvgnukZrDaqlQWXn@altaria.proxy.rlwy.net:37233/gestion_scolaire
 // 1. Récupération des constantes via les variables d'environnement de Railway (avec valeurs par défaut pour le local)
-define('DB_SERVER', getenv('MYSQLHOST') ?: 'localhost');
+define('DB_SERVER', getenv('MYSQLHOST') ?: 'altaria.proxy.rlwy.net');
 define('DB_USERNAME', getenv('MYSQLUSER') ?: 'root');
-define('DB_PASSWORD', getenv('MYSQLPASSWORD') ?: '');
+define('DB_PASSWORD', getenv('MYSQLPASSWORD') ?: 'dElLkGOSThJTGJgCMvgnukZrDaqlQWXn');
 define('DB_NAME', getenv('MYSQLDATABASE') ?: 'gestion_scolaire');
-define('DB_PORT', getenv('MYSQLPORT') ?: 3306);
+define('DB_PORT', getenv('MYSQLPORT') ?: 37233);
 
 // 2. Création de la connexion à la base de données avec mysqli (en incluant le port)
 $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME, (int)DB_PORT);

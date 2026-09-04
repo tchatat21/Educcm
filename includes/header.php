@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/db.php'; // Toujours charger la DB en premier
 
-define('BASE_URL', '/G/');
+define('BASE_URL', '/');
 
 $public_pages = ['login.php', 'creer_hash.php'];
 $current_page = basename($_SERVER['PHP_SELF']);

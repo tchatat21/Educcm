@@ -1,31 +1,56 @@
 <?php
 // Fichier : includes/db.php
 
-// Fichier : includes/db.php
-
 // 1. Fonction utilitaire pour lire les variables d'environnement de façon 100% fiable
+// Parcourt $_SERVER, $_ENV et getenv() dans cet ordre
 function getEnvVar($key, $default = null)
 {
-    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '')
+    // $_SERVER peut contenir les vars d'env sur certains serveurs
+    if (isset($_SERVER[$key]) && $_SERVER[$key] !== '') {
         return $_SERVER[$key];
-    if (isset($_ENV[$key]) && $_ENV[$key] !== '')
+    }
+    // $_ENV nécessite variables_order="E..." dans php.ini
+    if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
         return $_ENV[$key];
+    }
+    // getenv() est la méthode la plus fiable sur Railway/Nixpacks
     $val = getenv($key);
-    if ($val !== false && $val !== '')
+    if ($val !== false && $val !== '') {
         return $val;
+    }
     return $default;
 }
 
-// 2. Récupération des constantes (sans fallback sur localhost pour forcer l'erreur si vide)
+// 2. Tenter de parser DATABASE_URL si les variables séparées sont absentes
+//    Railway peut injecter une URL de type : mysql://user:pass@host:port/dbname
 $host = getEnvVar('MYSQLHOST');
 $user = getEnvVar('MYSQLUSER');
 $pass = getEnvVar('MYSQLPASSWORD');
-$db = getEnvVar('MYSQLDATABASE');
+$db   = getEnvVar('MYSQLDATABASE');
 $port = getEnvVar('MYSQLPORT', 3306);
+
+if (empty($host)) {
+    $databaseUrl = getEnvVar('DATABASE_URL') ?: getEnvVar('MYSQL_URL') ?: getEnvVar('MYSQL_PUBLIC_URL');
+    if (!empty($databaseUrl)) {
+        $parsed = parse_url($databaseUrl);
+        $host = $parsed['host']  ?? null;
+        $user = $parsed['user']  ?? null;
+        $pass = $parsed['pass']  ?? null;
+        $port = $parsed['port']  ?? 3306;
+        // Le nom de la base est dans le chemin, ex: /dbname → dbname
+        $db   = isset($parsed['path']) ? ltrim($parsed['path'], '/') : null;
+    }
+}
 
 // --- VÉRIFICATION DE SÉCURITÉ ---
 if (empty($host)) {
-    die("ERREUR CRITIQUE : PHP n'arrive toujours pas à lire les variables d'environnement sur Railway.");
+    // Diagnostic détaillé pour faciliter le débogage
+    $debug  = "ERREUR : Impossible de lire les variables d'environnement Railway.\n\n";
+    $debug .= "Variables attendues : MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE, MYSQLPORT\n";
+    $debug .= "Ou : DATABASE_URL / MYSQL_URL\n\n";
+    $debug .= "Vérifiez que ces variables sont bien définies dans Railway → Variables.\n";
+    $debug .= "variables_order PHP actuel : " . ini_get('variables_order') . "\n";
+    die(nl2br(htmlspecialchars($debug)));
 }
 // --------------------------------
 

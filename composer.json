@@ -1,6 +1,7 @@
 {
     "require": {
         "phpmailer/phpmailer": "*",
-        "dompdf/dompdf": "*"
+        "dompdf/dompdf": "*",
+        "ext-mysqli": "*"
     }
 }

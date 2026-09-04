@@ -5,7 +5,7 @@
 define('DB_SERVER', getenv('MYSQLHOST') ?: 'altaria.proxy.rlwy.net');
 define('DB_USERNAME', getenv('MYSQLUSER') ?: 'root');
 define('DB_PASSWORD', getenv('MYSQLPASSWORD') ?: 'dElLkGOSThJTGJgCMvgnukZrDaqlQWXn');
-define('DB_NAME', getenv('MYSQLDATABASE') ?: 'gestion_scolaire');
+define('DB_NAME', getenv('MySQL.MYSQLDATABASE') ?: 'gestion_scolaire');
 define('DB_PORT', getenv('MYSQLPORT') ?: 37233);
 
 // 2. Création de la connexion à la base de données avec mysqli (en incluant le port)

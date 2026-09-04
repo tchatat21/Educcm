@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Définir le chemin de base de l'application
-define('BASE_URL', '/G/');
+define('BASE_URL', '/');
 
 // Si l'utilisateur est connecté (sa session existe), le rediriger vers le tableau de bord.
 if (isset($_SESSION['user_id'])) {

@@ -3,13 +3,15 @@
 // Ce fichier gère la connexion à la base de données MySQL.
 
 // 1. Définition des constantes de connexion
-define('DB_SERVER', 'localhost'); // Adresse du serveur MySQL
-define('DB_USERNAME', 'root');      // Nom d'utilisateur de la base de données
-define('DB_PASSWORD', '');          // Mot de passe de la base de données
-define('DB_NAME', 'gestion_scolaire'); // Nom de la base de données
+// Sur Railway, les variables d'environnement MYSQLHOST, MYSQLUSER, etc. sont injectées automatiquement
+define('DB_SERVER',   getenv('MYSQLHOST')     ?: getenv('DB_SERVER')   ?: 'localhost');
+define('DB_USERNAME', getenv('MYSQLUSER')     ?: getenv('DB_USERNAME') ?: 'root');
+define('DB_PASSWORD', getenv('MYSQLPASSWORD') ?: getenv('DB_PASSWORD') ?: '');
+define('DB_NAME',     getenv('MYSQLDATABASE') ?: getenv('DB_NAME')     ?: 'gestion_scolaire');
+define('DB_PORT',     (int)(getenv('MYSQLPORT') ?: 3306));
 
 // 2. Création de la connexion à la base de données avec mysqli
-$conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+$conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT);
 
 // 3. Vérification de la connexion
 if ($conn->connect_error) {

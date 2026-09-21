@@ -3,8 +3,9 @@ FROM php:8.2-apache
 # Installer les extensions PHP nécessaires
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# Activer mod_rewrite Apache
-RUN a2enmod rewrite
+# Désactiver les MPM en conflit, garder uniquement prefork
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_prefork rewrite
 
 # Installer les dépendances système pour GD et ZIP
 RUN apt-get update && apt-get install -y \

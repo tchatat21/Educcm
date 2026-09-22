@@ -7,8 +7,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Définir le chemin de base de l'application
-define('BASE_URL', '/Educcm/');
+// Définir le chemin de base de l'application dynamiquement
+// Sur Railway : /    Sur XAMPP local : /Educcm/
+$script_dir = dirname($_SERVER['SCRIPT_NAME']);
+$base = ($script_dir === '/' || $script_dir === '\\') ? '/' : rtrim($script_dir, '/') . '/';
+define('BASE_URL', $base);
 
 // Si l'utilisateur est connecté (sa session existe), le rediriger vers le tableau de bord.
 if (isset($_SESSION['user_id'])) {

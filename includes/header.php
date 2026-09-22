@@ -5,7 +5,12 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/db.php'; // Toujours charger la DB en premier
 
-define('BASE_URL', '/Educcm/');
+define('BASE_URL', (function() {
+    $dir = dirname($_SERVER['SCRIPT_NAME']);
+    // Remonter au dossier racine de l'app (pas pages/ ni includes/)
+    $dir = str_replace(['\\', '/pages', '/includes'], ['/', '', ''], $dir);
+    return ($dir === '' || $dir === '/') ? '/' : rtrim($dir, '/') . '/';
+})());
 
 $public_pages = ['login.php', 'register.php', 'creer_hash.php'];
 $current_page = basename($_SERVER['PHP_SELF']);

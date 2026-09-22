@@ -4,11 +4,11 @@
 
 // 1. Définition des constantes de connexion
 // Sur Railway, les variables d'environnement MYSQLHOST, MYSQLUSER, etc. sont injectées automatiquement
-define('DB_SERVER',   getenv('MYSQLHOST')     ?: getenv('DB_SERVER')   ?: 'localhost');
-define('DB_USERNAME', getenv('MYSQLUSER')     ?: getenv('DB_USERNAME') ?: 'root');
-define('DB_PASSWORD', getenv('MYSQLPASSWORD') ?: getenv('DB_PASSWORD') ?: '');
-define('DB_NAME',     getenv('MYSQLDATABASE') ?: getenv('DB_NAME')     ?: 'gestion_scolaire');
-define('DB_PORT',     (int)(getenv('MYSQLPORT') ?: 3306));
+define('DB_SERVER',   getenv('MySQL.MYSQLHOST')     ?: getenv('DB_SERVER')   ?: 'localhost');
+define('DB_USERNAME', getenv('MySQL.MYSQLUSER')     ?: getenv('DB_USERNAME') ?: 'root');
+define('DB_PASSWORD', getenv('MySQL.MYSQLPASSWORD') ?: getenv('DB_PASSWORD') ?: '');
+define('DB_NAME',     getenv('MySQL.MYSQLDATABASE') ?: getenv('DB_NAME')     ?: 'gestion_scolaire');
+define('DB_PORT',     (int)(getenv('MySQL.MYSQLPORT') ?: 3306));
 
 // 2. Création de la connexion à la base de données avec mysqli
 $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT);

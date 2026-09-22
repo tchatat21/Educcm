@@ -24,6 +24,6 @@ RUN composer install --no-dev --optimize-autoloader
 RUN mkdir -p /app/uploads/justificatifs /app/uploads/photos \
     && chmod -R 755 /app/uploads
 
-EXPOSE 80
+EXPOSE ${PORT:-80}
 
-CMD ["php", "-S", "0.0.0.0:80", "-t", "/app"]
+CMD php -S 0.0.0.0:${PORT:-80} -t /app

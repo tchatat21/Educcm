@@ -1,35 +1,29 @@
-FROM php:8.2-apache
+FROM php:8.2-cli
 
 # Installer les extensions PHP nécessaires
-RUN docker-php-ext-install mysqli pdo pdo_mysql
-
-# Désactiver les MPM en conflit, garder uniquement prefork
-RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
-    && a2enmod mpm_prefork rewrite
-
-# Installer les dépendances système pour GD et ZIP
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libzip-dev \
     libcurl4-openssl-dev \
     zip \
     unzip \
-    && docker-php-ext-install gd zip curl \
+    && docker-php-ext-install mysqli pdo pdo_mysql gd zip curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Installer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copier les fichiers du projet
-COPY . /var/www/html/
+WORKDIR /app
+COPY . /app/
 
 # Installer les dépendances PHP (PHPMailer, dompdf)
-WORKDIR /var/www/html
 RUN composer install --no-dev --optimize-autoloader
 
-# Permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+# Permissions sur les dossiers uploads
+RUN mkdir -p /app/uploads/justificatifs /app/uploads/photos \
+    && chmod -R 755 /app/uploads
 
-# Exposer le port
 EXPOSE 80
+
+CMD ["php", "-S", "0.0.0.0:80", "-t", "/app"]

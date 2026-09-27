@@ -29,6 +29,10 @@ if ($conn->connect_error) {
 // 4. Définir le jeu de caractères en UTF-8
 $conn->set_charset("utf8mb4");
 
+// Année scolaire partagée par les inscriptions, listes et documents imprimés.
+require_once __DIR__ . '/school_year.php';
+require_once __DIR__ . '/school_settings.php';
+
 // --- AUTO-RÉPARATION DE LA BASE DE DONNÉES ---
 // Vérifie si la colonne is_read existe, sinon la crée
 $check_col = $conn->query("SHOW COLUMNS FROM `notifications` LIKE 'is_read'");
@@ -54,9 +58,15 @@ if (!is_dir($photos_dir)) @mkdir($photos_dir, 0755, true);
 // Création de la table settings si elle n'existe pas
 $conn->query("CREATE TABLE IF NOT EXISTS `settings` (
     `setting_key` VARCHAR(50) PRIMARY KEY,
-    `setting_value` TEXT,
+    `setting_value` LONGTEXT,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+// Les logos encodés en base64 dépassent parfois la limite du type TEXT.
+$settings_value_column = $conn->query("SHOW COLUMNS FROM `settings` LIKE 'setting_value'");
+if ($settings_value_column && ($settings_column = $settings_value_column->fetch_assoc()) && strtolower($settings_column['Type']) !== 'longtext') {
+    $conn->query("ALTER TABLE `settings` MODIFY `setting_value` LONGTEXT NULL");
+}
 
 // Création de la table pour le suivi des validations automatisées des inscriptions
 $conn->query("CREATE TABLE IF NOT EXISTS `registration_validations` (
@@ -92,6 +102,8 @@ $conn->query("CREATE TABLE IF NOT EXISTS `parents_enfants` (
 
 // Initialisation des paramètres du cachet si vide
 $default_settings = [
+    'school_name' => 'EDUC.CM',
+    'school_logo_data' => '',
     'school_stamp' => '',
     'stamp_top' => '-8',
     'stamp_right' => '2',

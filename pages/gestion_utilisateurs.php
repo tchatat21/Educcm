@@ -2,6 +2,7 @@
 $page_title = 'Gestion des Utilisateurs';
 include '../includes/header.php';
 require_once '../includes/db.php';
+require_once '../includes/password_policy.php';
 
 if ($_SESSION['user_role'] !== 'administrateur') {
     echo "<div class='alert alert-danger'><i class='bi bi-exclamation-triangle-fill'></i> Accès refusé.</div>";
@@ -26,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "La création directe d'un administrateur est interdite. Seul un enseignant peut être promu administrateur.";
         } elseif (empty($nom) || empty($prenom) || empty($email) || empty($mot_de_passe) || empty($role)) {
             $error = 'Tous les champs sont obligatoires.';
+        } elseif (!isStrongPassword($mot_de_passe)) {
+            $error = 'Le mot de passe doit contenir au moins 12 caractères, une majuscule, une minuscule, un chiffre et un symbole.';
         } else {
             $hashed_password = password_hash($mot_de_passe, PASSWORD_DEFAULT);
             $qr_token = ($role === 'eleve') ? bin2hex(random_bytes(16)) : null;
@@ -85,10 +88,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$users_result = $conn->query("SELECT u.id, u.nom, u.prenom, u.email, u.role, u.photo, u.justificatif, u.enfants_noms, u.statut_compte, v.validation_score, v.is_valid, v.issues
+$users_result = $conn->query("SELECT u.id, u.nom, u.prenom, u.email, u.role, u.photo, u.justificatif, u.enfants_noms, u.statut_compte, u.date_creation, v.validation_score, v.is_valid, v.issues
     FROM utilisateurs u
     LEFT JOIN registration_validations v ON v.user_id = u.id
-    ORDER BY u.nom, u.prenom");
+    ORDER BY u.date_creation DESC, u.id DESC");
 ?>
 
 <div class="admin-shell mb-4">
@@ -133,7 +136,8 @@ $users_result = $conn->query("SELECT u.id, u.nom, u.prenom, u.email, u.role, u.p
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">Mot de passe</label>
-                        <input type="password" class="form-control" name="mot_de_passe" required>
+                        <input type="password" class="form-control" name="mot_de_passe" required minlength="12" autocomplete="new-password">
+                        <small class="form-text">12 caractères minimum, avec majuscule, minuscule, chiffre et symbole.</small>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">Rôle assigné</label>
@@ -174,6 +178,7 @@ $users_result = $conn->query("SELECT u.id, u.nom, u.prenom, u.email, u.role, u.p
                 <thead>
                     <tr>
                         <th class="ps-4">Utilisateur</th>
+                        <th>Inscrit le</th>
                         <th>Email</th>
                         <th>Rôle</th>
                         <th>Statut</th>
@@ -233,6 +238,7 @@ $users_result = $conn->query("SELECT u.id, u.nom, u.prenom, u.email, u.role, u.p
                                     </div>
                                 </div>
                             </td>
+                            <td class="small text-nowrap"><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($user['date_creation']))); ?></td>
                             <td><?php echo htmlspecialchars($user['email']); ?></td>
                             <td><span class="badge <?php echo $role_color; ?> rounded-pill px-3"><?php echo ucfirst($user['role']); ?></span></td>
                             <td>

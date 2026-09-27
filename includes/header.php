@@ -25,6 +25,18 @@ if (isset($_SESSION['user_id'])) {
     $user_prenom = $_SESSION['user_prenom'] ?? 'Utilisateur';
     $user_nom = $_SESSION['user_nom'] ?? '';
     $user_role = $_SESSION['user_role'] ?? '';
+
+    $unread_count = 0;
+    if (in_array($user_role, ['parent', 'eleve', 'enseignant'], true)) {
+        $unread_stmt = $conn->prepare('SELECT COUNT(*) AS unread FROM notifications WHERE recipient_id = ? AND is_read = 0');
+        if ($unread_stmt) {
+            $unread_stmt->bind_param('i', $user_id);
+            if ($unread_stmt->execute()) {
+                $unread_count = (int)$unread_stmt->get_result()->fetch_assoc()['unread'];
+            }
+            $unread_stmt->close();
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -81,6 +93,15 @@ if (isset($_SESSION['user_id'])) {
                 <li class="nav-item">
                     <a class="nav-link <?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?>" href="dashboard.php"><i class="bi bi-house-door-fill"></i> Tableau de Bord</a>
                 </li>
+
+                <?php if (in_array($user_role, ['parent', 'eleve', 'enseignant'], true)): ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($current_page === 'mes_messages.php') ? 'active' : ''; ?>" href="pages/mes_messages.php">
+                            <i class="bi bi-inbox-fill"></i> Mes messages
+                            <?php if ($unread_count > 0): ?><span class="badge rounded-pill bg-danger ms-1"><?php echo $unread_count; ?></span><?php endif; ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
                 
                 <?php if ($user_role === 'administrateur'): ?>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'gestion_utilisateurs.php') ? 'active' : ''; ?>" href="pages/gestion_utilisateurs.php"><i class="bi bi-people-fill"></i> Utilisateurs</a></li>
@@ -89,12 +110,15 @@ if (isset($_SESSION['user_id'])) {
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'impression_groupée.php') ? 'active' : ''; ?>" href="pages/impression_groupée.php"><i class="bi bi-printer-fill text-warning"></i> Impression Cartes</a></li>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'gestion_emplois_du_temps.php') ? 'active' : ''; ?>" href="pages/gestion_emplois_du_temps.php"><i class="bi bi-calendar-week-fill"></i> Emplois du temps</a></li>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'suivi_absences.php') ? 'active' : ''; ?>" href="pages/suivi_absences.php"><i class="bi bi-person-check-fill"></i> Suivi Absences</a></li>
+                    <li class="nav-item"><a class="nav-link report-nav-link <?php echo ($current_page === 'rapport_presences_journalier.php') ? 'active' : ''; ?>" href="pages/rapport_presences_journalier.php"><i class="bi bi-clipboard2-data-fill"></i> Rapport journalier</a></li>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'suivi_notifications.php') ? 'active' : ''; ?>" href="pages/suivi_notifications.php"><i class="bi bi-bell-fill"></i> Notifications</a></li>
+                    <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'diffusion_messages.php') ? 'active' : ''; ?>" href="pages/diffusion_messages.php"><i class="bi bi-megaphone-fill"></i> Diffuser un message</a></li>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'parametres_ecole.php') ? 'active' : ''; ?>" href="pages/parametres_ecole.php"><i class="bi bi-gear-fill"></i> Paramètres</a></li>
                 <?php endif; ?>
 
                 <?php if ($user_role === 'enseignant'): ?>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'faire_appel.php') ? 'active' : ''; ?>" href="pages/faire_appel.php"><i class="bi bi-check-circle-fill"></i> Faire l'appel</a></li>
+                    <li class="nav-item"><a class="nav-link report-nav-link <?php echo ($current_page === 'rapport_presences_journalier.php') ? 'active' : ''; ?>" href="pages/rapport_presences_journalier.php"><i class="bi bi-clipboard2-data-fill"></i> Rapport journalier</a></li>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'gestion_cours_supplementaires.php') ? 'active' : ''; ?>" href="pages/gestion_cours_supplementaires.php"><i class="bi bi-plus-circle-fill"></i> Cours Supplémentaires</a></li>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'mon_emploi_du_temps.php') ? 'active' : ''; ?>" href="pages/mon_emploi_du_temps.php"><i class="bi bi-calendar3"></i> Mon Emploi du temps</a></li>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'suivi_absences.php') ? 'active' : ''; ?>" href="pages/suivi_absences.php"><i class="bi bi-person-check-fill"></i> Suivi Absences</a></li>
@@ -105,26 +129,9 @@ if (isset($_SESSION['user_id'])) {
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'mon_emploi_du_temps.php') ? 'active' : ''; ?>" href="pages/mon_emploi_du_temps.php"><i class="bi bi-calendar3"></i> Mon Emploi du temps</a></li>
                 <?php endif; ?>
 
-                <?php if ($user_role === 'parent'): 
-                    // Compter les notifications non lues avec sécurité
-                    $unread_count = 0;
-                    try {
-                        $res_notif = $conn->query("SELECT COUNT(*) as unread FROM notifications WHERE recipient_id = $user_id AND is_read = 0");
-                        if ($res_notif) $unread_count = $res_notif->fetch_assoc()['unread'];
-                    } catch (Exception $e) {
-                        $unread_count = 0; // Sécurité si la colonne n'existe pas encore
-                    }
-                ?>
+                <?php if ($user_role === 'parent'): ?>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'absences_enfants.php') ? 'active' : ''; ?>" href="pages/absences_enfants.php"><i class="bi bi-person-rolodex"></i> Enfants</a></li>
                     <li class="nav-item"><a class="nav-link <?php echo ($current_page == 'emploi_du_temps_enfant.php') ? 'active' : ''; ?>" href="pages/emploi_du_temps_enfant.php"><i class="bi bi-calendar3"></i> Emplois du temps</a></li>
-                    <li class="nav-item">
-                        <a class="nav-link position-relative <?php echo ($current_page == 'notifications_parent.php') ? 'active' : ''; ?>" href="pages/notifications_parent.php">
-                            <i class="bi bi-bell-fill"></i> Notifications
-                            <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; <?php echo ($unread_count > 0) ? '' : 'display:none;'; ?>">
-                                <?php echo $unread_count; ?>
-                            </span>
-                        </a>
-                    </li>
                 <?php endif; ?>
             </ul>
             <span class="navbar-text me-3">
@@ -137,11 +144,11 @@ if (isset($_SESSION['user_id'])) {
 <?php endif; ?>
 
 <main class="container-fluid mt-4">
-    <div class="p-3 mb-4 bg-white rounded-3 shadow-sm">
-        <div class="d-flex justify-content-between align-items-center">
-             <h1 class="display-6"><?php echo isset($page_title) ? htmlspecialchars($page_title) : 'Tableau de Bord'; ?></h1>
+    <div class="page-titlebar p-3 mb-4 bg-white rounded-3 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center flex-grow-1">
+             <h1 class="page-title display-6"><?php echo isset($page_title) ? htmlspecialchars($page_title) : 'Tableau de Bord'; ?></h1>
              <?php if (isset($user_id)): ?>
-                <div class="text-end">
+                <div class="page-identity text-end">
                     <p class="mb-0"><strong><?php echo htmlspecialchars($user_prenom . ' ' . $user_nom); ?></strong></p>
                     <p class="mb-0 text-muted"><?php echo htmlspecialchars(ucfirst($user_role)); ?></p>
                 </div>

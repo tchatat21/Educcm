@@ -2,6 +2,7 @@
 $page_title = 'Modifier un Utilisateur';
 include '../includes/header.php';
 require_once '../includes/db.php';
+require_once '../includes/password_policy.php';
 
 if ($_SESSION['user_role'] !== 'administrateur') {
     echo "<div class='alert alert-danger'><i class='bi bi-exclamation-triangle-fill'></i> Accès refusé.</div>";
@@ -40,11 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($role === 'administrateur' && $old_role !== 'enseignant' && $old_role !== 'administrateur') {
             $error = "Action interdite : Seul un enseignant peut être promu au rôle d'Administrateur.";
         }
+        if ($mot_de_passe !== '' && !isStrongPassword($mot_de_passe)) {
+            $error = 'Le nouveau mot de passe doit contenir au moins 12 caractères, une majuscule, une minuscule, un chiffre et un symbole.';
+        }
 
         $new_photo_name = $old_photo; // Par défaut, on garde l'ancienne
 
         // 2. Gestion de l'upload de la nouvelle photo
-        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+        if (empty($error) && isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
             $fileTmpPath = $_FILES['photo']['tmp_name'];
             $fileName = $_FILES['photo']['name'];
             $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
@@ -91,8 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $classe_id = isset($_POST['classe_id']) ? (int)$_POST['classe_id'] : 0;
                     $conn->query("DELETE FROM inscriptions WHERE eleve_id = $user_id");
                     if ($classe_id > 0) {
-                        $stmt_ins = $conn->prepare("INSERT INTO inscriptions (eleve_id, classe_id, annee_scolaire) VALUES (?, ?, '2025-2026')");
-                        $stmt_ins->bind_param("ii", $user_id, $classe_id);
+                        $annee_scolaire = getCurrentSchoolYear();
+                        $stmt_ins = $conn->prepare("INSERT INTO inscriptions (eleve_id, classe_id, annee_scolaire) VALUES (?, ?, ?)");
+                        $stmt_ins->bind_param("iis", $user_id, $classe_id, $annee_scolaire);
                         $stmt_ins->execute();
                         $stmt_ins->close();
                     }
@@ -195,7 +200,7 @@ $linked_children = $conn->query("SELECT u.id, u.nom, u.prenom FROM utilisateurs 
                                 </select>
                                 <small class="text-muted">Seuls les enseignants peuvent être promus au rôle d'Administrateur.</small>
                             </div>
-                            <div class="col-md-12"><label class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label><input type="password" name="mot_de_passe" class="form-control"></div>
+                            <div class="col-md-12"><label class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label><input type="password" name="mot_de_passe" class="form-control" minlength="12" autocomplete="new-password"><small class="form-text">12 caractères minimum, avec majuscule, minuscule, chiffre et symbole.</small></div>
                             
                             <div class="col-md-12">
                                 <label class="form-label">Photo de profil / Carte</label>

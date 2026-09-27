@@ -92,7 +92,7 @@ foreach ($classes as $c) {
         <div class="text-end">
             <h5 class="fw-bold mb-0">EMPLOI DU TEMPS OFFICIEL</h5>
             <div class="text-primary fw-bold">Classe : <?php echo htmlspecialchars($selected_class_name); ?></div>
-            <small class="text-muted">Année Académique 2025 - 2026</small>
+            <small class="text-muted">Année Académique <?php echo htmlspecialchars(str_replace('-', ' - ', getCurrentSchoolYear())); ?></small>
         </div>
     </div>
 </div>

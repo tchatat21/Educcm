@@ -11,6 +11,7 @@ if (isset($_SESSION['user_id'])) {
 
 require_once 'includes/db.php';
 require_once 'includes/inscription_validation_bot.php';
+require_once 'includes/password_policy.php';
 
 $error = '';
 $success = '';
@@ -57,8 +58,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error = "Veuillez renseigner tous les champs obligatoires.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Le format de l'adresse email est invalide.";
-    } elseif (strlen($password) < 6) {
-        $error = "Le mot de passe doit contenir au moins 6 caractères.";
+    } elseif (!isStrongPassword($password)) {
+        $error = "Le mot de passe doit contenir au moins 12 caractères, une majuscule, une minuscule, un chiffre et un symbole.";
     } elseif ($password !== $password_confirm) {
         $error = "Les deux mots de passe ne correspondent pas.";
     } else {
@@ -212,7 +213,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 if (empty($error)) {
                     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                     $qr_token = ($role === 'eleve') ? bin2hex(random_bytes(16)) : null;
-                    $statut_compte = 'en_attente'; // Mis en attente de vérification par l'administration
+                    // Le compte reste en attente jusqu'à la décision enregistrée par le bot ci-dessous.
+                    $statut_compte = 'en_attente';
 
                     $stmt = $conn->prepare("
                         INSERT INTO utilisateurs 
@@ -227,8 +229,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                         // Si c'est un élève, l'inscrire directement dans sa classe
                         if ($role === 'eleve' && $classe_id > 0) {
-                            $stmt_ins = $conn->prepare("INSERT INTO inscriptions (eleve_id, classe_id, annee_scolaire) VALUES (?, ?, '2025-2026')");
-                            $stmt_ins->bind_param("ii", $new_user_id, $classe_id);
+                            $annee_scolaire = getCurrentSchoolYear();
+                            $stmt_ins = $conn->prepare("INSERT INTO inscriptions (eleve_id, classe_id, annee_scolaire) VALUES (?, ?, ?)");
+                            $stmt_ins->bind_param("iis", $new_user_id, $classe_id, $annee_scolaire);
                             $stmt_ins->execute();
                             $stmt_ins->close();
                         }
@@ -242,16 +245,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             }
                         }
 
+                        // Le bot contrôle les pièces et applique lui-même le statut final du compte.
                         $bot = new InscriptionValidationBot();
                         $validation_path = $upload_justif_dir . $justificatif_filename;
                         $photo_path = $upload_photos_dir . $photo_filename;
                         $result = $bot->analyzeRegistration($conn, $new_user_id, $role, $photo_path, $validation_path);
 
                         if ($result['valid']) {
-                            $conn->query("UPDATE utilisateurs SET statut_compte = 'actif' WHERE id = " . (int)$new_user_id);
                             $success = "Inscription validée automatiquement par le bot. Un message a été envoyé à l’administrateur.";
                         } else {
-                            $conn->query("UPDATE utilisateurs SET statut_compte = 'en_attente' WHERE id = " . (int)$new_user_id);
                             $error = "L’inscription a été enregistrée, mais le bot a détecté un problème sur les documents. L’administration va vérifier le dossier.";
                         }
 
@@ -399,7 +401,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Mot de passe <span class="text-danger">*</span> (min 6 car.)</label>
-                            <input type="password" class="form-control rounded-3" name="password" required placeholder="••••••••">
+                            <input type="password" class="form-control rounded-3" name="password" required minlength="12" autocomplete="new-password" placeholder="12 caractères minimum">
+                            <div class="form-text">12 caractères minimum, avec majuscule, minuscule, chiffre et symbole.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Confirmer le mot de passe <span class="text-danger">*</span></label>

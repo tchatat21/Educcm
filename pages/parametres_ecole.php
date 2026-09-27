@@ -13,35 +13,71 @@ $error = '';
 // Traitement du formulaire
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['update_stamp'])) {
-        // Mise à jour des positions et taille
-        $stmt = $conn->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ?");
-        
-        $top = $_POST['stamp_top'];
-        $right = $_POST['stamp_right'];
-        $size = $_POST['stamp_size'];
-        
-        $keys = ['stamp_top' => $top, 'stamp_right' => $right, 'stamp_size' => $size];
-        foreach ($keys as $key => $val) {
-            $stmt->bind_param("ss", $val, $key);
-            $stmt->execute();
-        }
-        
-        // Gestion de l'image du cachet
-        if (!empty($_FILES['school_stamp']['name'])) {
-            $target_dir = "../uploads/school/";
-            $file_extension = strtolower(pathinfo($_FILES["school_stamp"]["name"], PATHINFO_EXTENSION));
-            $new_filename = "stamp_" . time() . "." . $file_extension;
-            $target_file = $target_dir . $new_filename;
-            
-            if (move_uploaded_file($_FILES["school_stamp"]["tmp_name"], $target_file)) {
-                $stmt->bind_param("ss", $new_filename, $key = 'school_stamp');
-                $stmt->execute();
-                $message = "Paramètres et cachet mis à jour !";
-            } else {
-                $error = "Erreur lors de l'upload de l'image.";
-            }
+        $school_name = trim($_POST['school_name'] ?? '');
+        $top = (string)($_POST['stamp_top'] ?? '0');
+        $right = (string)($_POST['stamp_right'] ?? '0');
+        $size = (string)($_POST['stamp_size'] ?? '15');
+
+        if ($school_name === '' || mb_strlen($school_name, 'UTF-8') > 150) {
+            $error = 'Le nom de l’établissement est obligatoire et limité à 150 caractères.';
         } else {
-            $message = "Paramètres de position mis à jour !";
+            // INSERT ... ON DUPLICATE KEY met aussi en place les réglages absents d'une ancienne base.
+            $stmt = $conn->prepare('INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)');
+            $keys = [
+                'school_name' => $school_name,
+                'stamp_top' => $top,
+                'stamp_right' => $right,
+                'stamp_size' => $size,
+            ];
+            foreach ($keys as $key => $value) {
+                $stmt->bind_param('ss', $key, $value);
+                $stmt->execute();
+            }
+
+            // Le logo est conservé dans settings en Data URI afin de suivre les exports SQL.
+            if (isset($_FILES['school_logo']) && $_FILES['school_logo']['error'] !== UPLOAD_ERR_NO_FILE) {
+                $logo_upload = $_FILES['school_logo'];
+                if ($logo_upload['error'] !== UPLOAD_ERR_OK || $logo_upload['size'] > 2097152) {
+                    $error = 'Le logo doit peser au maximum 2 Mo et être téléversé correctement.';
+                } else {
+                    $logo_info = @getimagesize($logo_upload['tmp_name']);
+                    $logo_mime = $logo_info['mime'] ?? '';
+                    $logo_mimes = ['image/png' => 'png', 'image/jpeg' => 'jpeg', 'image/webp' => 'webp'];
+                    if (!$logo_info || !isset($logo_mimes[$logo_mime])) {
+                        $error = 'Le logo doit être une image PNG, JPEG ou WEBP valide.';
+                    } else {
+                        $logo_data = 'data:' . $logo_mime . ';base64,' . base64_encode(file_get_contents($logo_upload['tmp_name']));
+                        $key = 'school_logo_data';
+                        $stmt->bind_param('ss', $key, $logo_data);
+                        if (!$stmt->execute()) {
+                            $error = 'Impossible d’enregistrer le logo dans la base de données.';
+                        }
+                    }
+                }
+            }
+
+            // Gestion facultative de l'image du cachet.
+            if ($error === '' && !empty($_FILES['school_stamp']['name'])) {
+                $target_dir = __DIR__ . '/../uploads/school/';
+                if (!is_dir($target_dir)) {
+                    mkdir($target_dir, 0755, true);
+                }
+                $file_extension = strtolower(pathinfo($_FILES['school_stamp']['name'], PATHINFO_EXTENSION));
+                $new_filename = 'stamp_' . bin2hex(random_bytes(8)) . '.' . $file_extension;
+                $target_file = $target_dir . $new_filename;
+
+                if (move_uploaded_file($_FILES['school_stamp']['tmp_name'], $target_file)) {
+                    $key = 'school_stamp';
+                    $stmt->bind_param('ss', $key, $new_filename);
+                    $stmt->execute();
+                    $message = 'Nom de l’établissement, paramètres et cachet mis à jour.';
+                } else {
+                    $error = 'Les paramètres ont été enregistrés, mais le téléversement du cachet a échoué.';
+                }
+            } elseif ($error === '') {
+                $message = 'Nom de l’établissement et paramètres mis à jour.';
+            }
+            $stmt->close();
         }
     }
 }
@@ -52,14 +88,19 @@ $res = $conn->query("SELECT * FROM settings");
 while ($row = $res->fetch_assoc()) {
     $settings[$row['setting_key']] = $row['setting_value'];
 }
+$settings['school_name'] = $settings['school_name'] ?? 'EDUC.CM';
+$settings['stamp_top'] = $settings['stamp_top'] ?? '0';
+$settings['stamp_right'] = $settings['stamp_right'] ?? '0';
+$settings['stamp_size'] = $settings['stamp_size'] ?? '15';
+$logo_data_uri = getSchoolLogoDataUri($conn);
 
 $stamp_url = !empty($settings['school_stamp']) ? "../uploads/view_file.php?folder=school&file=" . rawurlencode($settings['school_stamp']) : "";
 ?>
 
 <div class="row mb-4">
     <div class="col-md-8">
-        <h3 class="fw-bold text-navy">Configuration du Cachet Officiel</h3>
-        <p class="text-muted small">Personnalisez l'emplacement et l'image du cachet qui apparaîtra sur toutes les cartes scolaires.</p>
+        <h3 class="fw-bold text-navy">Paramètres de l'établissement</h3>
+        <p class="text-muted small">Configurez le nom et le logo des cartes scolaires et listes de classe, ainsi que le cachet officiel. Le logo est conservé dans la base et inclus lors de son export SQL.</p>
     </div>
 </div>
 
@@ -70,10 +111,21 @@ $stamp_url = !empty($settings['school_stamp']) ? "../uploads/view_file.php?folde
             <div class="card-body p-4">
                 <form action="pages/parametres_ecole.php" method="POST" enctype="multipart/form-data">
                     <div class="mb-4">
+                        <label class="form-label fw-bold small" for="school_name">Nom de l’établissement</label>
+                        <input type="text" id="school_name" name="school_name" class="form-control rounded-3" maxlength="150" value="<?php echo htmlspecialchars($settings['school_name']); ?>" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small" for="school_logo">Logo de l’établissement (PNG, JPEG ou WEBP, 2 Mo maximum)</label>
+                        <input type="file" id="school_logo" name="school_logo" class="form-control rounded-3" accept="image/png,image/jpeg,image/webp">
+                        <?php if ($logo_data_uri !== ''): ?>
+                            <img src="<?php echo htmlspecialchars($logo_data_uri); ?>" alt="Logo actuel" class="mt-3" style="max-width: 140px; max-height: 90px; object-fit: contain;">
+                        <?php endif; ?>
+                    </div>
+                    <div class="mb-4">
                         <label class="form-label fw-bold small">Image du Cachet (PNG transparent conseillé)</label>
                         <input type="file" name="school_stamp" class="form-control rounded-3" accept="image/*" onchange="previewImage(this)">
                         <?php if ($stamp_url): ?>
-                            <div class="mt-2 small text-muted">Fichier actuel : <?php echo $settings['school_stamp']; ?></div>
+                            <div class="mt-2 small text-muted">Fichier actuel : <?php echo htmlspecialchars($settings['school_stamp']); ?></div>
                         <?php endif; ?>
                     </div>
 

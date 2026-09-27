@@ -126,8 +126,9 @@ $today_courses = $stmt->get_result();
             $course = $stmt_c->get_result()->fetch_assoc();
 
             // Récupérer élèves
-            $stmt_s = $conn->prepare("SELECT u.id, u.nom, u.prenom, u.photo FROM utilisateurs u JOIN inscriptions i ON u.id = i.eleve_id WHERE i.classe_id = ? ORDER BY u.nom, u.prenom");
-            $stmt_s->bind_param("i", $course['classe_id']);
+            $school_year = getCurrentSchoolYear();
+            $stmt_s = $conn->prepare("SELECT u.id, u.nom, u.prenom, u.photo FROM utilisateurs u JOIN inscriptions i ON u.id = i.eleve_id WHERE i.classe_id = ? AND i.annee_scolaire = ? ORDER BY u.nom, u.prenom");
+            $stmt_s->bind_param("is", $course['classe_id'], $school_year);
             $stmt_s->execute();
             $students = $stmt_s->get_result();
             
@@ -139,7 +140,10 @@ $today_courses = $stmt->get_result();
             <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-header bg-white py-3 border-0">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 fw-bold">Appel : <?php echo htmlspecialchars($course['matiere_nom']); ?> (<?php echo htmlspecialchars($course['classe_nom']); ?>)</h5>
+                        <div>
+                            <h5 class="mb-0 fw-bold">Appel : <?php echo htmlspecialchars($course['matiere_nom']); ?> (<?php echo htmlspecialchars($course['classe_nom']); ?>)</h5>
+                            <a class="small" href="pages/rapport_presences_journalier.php?classe_id=<?php echo (int)$course['classe_id']; ?>&amp;date=<?php echo date('Y-m-d'); ?>">Ouvrir le rapport journalier de cette classe</a>
+                        </div>
                         <div class="text-end">
                             <span id="callCount" class="badge bg-primary rounded-pill">0 / <?php echo $students->num_rows; ?></span>
                         </div>

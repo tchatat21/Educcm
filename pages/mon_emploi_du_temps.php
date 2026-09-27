@@ -85,7 +85,7 @@ $jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
         <div class="text-end">
             <h5 class="fw-bold mb-0">EMPLOI DU TEMPS HEBDOMADAIRE</h5>
             <div class="text-primary fw-bold"><?php echo $target_info; ?></div>
-            <small class="text-muted">Année Académique 2025 - 2026</small>
+            <small class="text-muted">Année Académique <?php echo htmlspecialchars(str_replace('-', ' - ', getCurrentSchoolYear())); ?></small>
         </div>
     </div>
 </div>

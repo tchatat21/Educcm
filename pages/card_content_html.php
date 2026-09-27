@@ -7,11 +7,11 @@
     <!-- Header -->
     <div class="card-header-v2">
         <div class="logo-box-v2">
-            <img src="/G/educ.jpeg" alt="Logo" onerror="this.src='https://via.placeholder.com/100?text=LOGO'">
+            <img src="<?php echo htmlspecialchars(getSchoolLogoDataUri($conn) ?: '../educ.jpeg'); ?>" alt="Logo <?php echo htmlspecialchars(getSchoolDisplayName($conn)); ?>">
         </div>
         <div class="header-titles-v2">
-            <h1 class="school-name-v2">EDUC.CM</h1>
-            <div class="academic-year-v2">SESSION ACADÉMIQUE 2025 - 2026</div>
+            <h1 class="school-name-v2"><?php echo htmlspecialchars(getSchoolDisplayName($conn)); ?></h1>
+            <div class="academic-year-v2">SESSION ACADÉMIQUE <?php echo htmlspecialchars(str_replace('-', ' - ', getCurrentSchoolYear())); ?></div>
         </div>
         <div class="official-stamp">OFFICIEL</div>
     </div>
@@ -71,6 +71,6 @@
 
     <!-- Footer -->
     <div class="card-footer-v2">
-        CARTE D'IDENTITÉ SCOLAIRE OFFICIELLE • EDUC.CM
+        CARTE D'IDENTITÉ SCOLAIRE OFFICIELLE • <?php echo htmlspecialchars(getSchoolDisplayName($conn)); ?>
     </div>
 </div>

@@ -5,6 +5,7 @@ class InscriptionValidationBot
 {
     public function analyzeRegistration($conn, $user_id, $role, $photo_path, $document_path)
     {
+        // Les trois contrôles contribuent au score, mais un seul échec empêche l'activation.
         $score = 0;
         $checks = [];
         $issues = [];
@@ -35,13 +36,38 @@ class InscriptionValidationBot
 
         $valid = ($score >= 80 && empty($issues));
 
+        // L'administrateur reçoit une notification, mais son absence ne bloque pas une validation réussie.
+        $status = $valid ? 'actif' : 'en_attente';
+        $status_stmt = $conn->prepare('UPDATE utilisateurs SET statut_compte = ? WHERE id = ?');
+        if (!$status_stmt) {
+            $valid = false;
+            $issues[] = 'Impossible de mettre à jour le statut du compte.';
+        } else {
+            $status_stmt->bind_param('si', $status, $user_id);
+            if (!$status_stmt->execute()) {
+                $valid = false;
+                $issues[] = 'Impossible de mettre à jour le statut du compte.';
+            }
+            $status_stmt->close();
+        }
+
+        // Si la mise à jour d'un compte valide échoue, conserver l'état de révision par défaut.
+        if (!$valid && $status === 'actif') {
+            $pending_status = 'en_attente';
+            $pending_stmt = $conn->prepare('UPDATE utilisateurs SET statut_compte = ? WHERE id = ?');
+            if ($pending_stmt) {
+                $pending_stmt->bind_param('si', $pending_status, $user_id);
+                $pending_stmt->execute();
+                $pending_stmt->close();
+            }
+        }
+
         $this->saveResult($conn, $user_id, $role, $score, $valid, $checks, $issues);
 
         if ($valid) {
             $this->notifyAdministrators($conn, $user_id, $role, $score);
         } elseif (!empty($issues)) {
             $this->notifyAdministratorsOfRejection($conn, $user_id, $role, $issues, $score);
-            $conn->query("UPDATE utilisateurs SET statut_compte = 'bloque' WHERE id = " . (int)$user_id);
         }
 
         return [
@@ -54,6 +80,7 @@ class InscriptionValidationBot
 
     protected function verifyPhoto($photo_path)
     {
+        // Ce contrôle vérifie le fichier et sa résolution, pas l'identité de la personne photographiée.
         if (!is_file($photo_path)) {
             return ['valid' => false, 'message' => 'Photo de profil absente ou invalide.'];
         }
@@ -79,6 +106,7 @@ class InscriptionValidationBot
 
     protected function verifyDocument($document_path, $role)
     {
+        // Les contrôles PDF/image sont des vérifications de format et de contenu rudimentaires, pas une authentification.
         if (!is_file($document_path)) {
             return ['valid' => false, 'message' => 'Document justificatif absent.'];
         }
@@ -115,7 +143,7 @@ class InscriptionValidationBot
                 return ['valid' => false, 'message' => 'Le PDF ne semble pas être un document valide.'];
             }
 
-            if (preg_match('/(javascript|/JavaScript|<script)/i', $content)) {
+            if (preg_match('~(?:javascript|/JavaScript|<script)~i', $content)) {
                 return ['valid' => false, 'message' => 'Le PDF contient du contenu scripté non autorisé.'];
             }
         }
@@ -129,6 +157,7 @@ class InscriptionValidationBot
 
     protected function verifyIdentity($conn, $user_id, $role)
     {
+        // Les données textuelles sont contrôlées en base; aucune comparaison biométrique ou OCR n'est effectuée.
         $stmt = $conn->prepare('SELECT nom, prenom, email, role, enfants_noms, statut_compte FROM utilisateurs WHERE id = ?');
         if (!$stmt) {
             return ['valid' => false, 'message' => 'Impossible de vérifier les données utilisateur.'];
@@ -200,7 +229,7 @@ class InscriptionValidationBot
         }
 
         $full_name = trim($user['prenom'] . ' ' . $user['nom']);
-        $message = 'Nouvelle inscription validée par le bot : ' . $full_name . ' (' . strtoupper($role) . ') - score ' . $score . '/100. Vérifiez les pièces justificatives et activez le compte.';
+        $message = 'Inscription activée automatiquement par le bot : ' . $full_name . ' (' . strtoupper($role) . ') - score ' . $score . '/100. Vérifiez les pièces justificatives.';
 
         while ($admin = $admins->fetch_assoc()) {
             $stmt = $conn->prepare("INSERT INTO notifications (recipient_id, message, type, status, is_read) VALUES (?, ?, 'email', 'sent', 0)");

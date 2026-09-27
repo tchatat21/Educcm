@@ -9,7 +9,7 @@ if (isset($_GET['print']) && $_GET['print'] == '1') {
         die("Accès refusé. Veuillez vous connecter.");
     }
     require_once '../includes/db.php';
-    $logo_url = "/G/educ.jpeg";
+    $logo_url = getSchoolLogoDataUri($conn) ?: '../educ.jpeg';
     ?>
     <!DOCTYPE html>
     <html lang="fr">
@@ -36,7 +36,7 @@ if (isset($_GET['print']) && $_GET['print'] == '1') {
 $page_title = 'Carte Scolaire - Verso';
 include '../includes/header.php';
 
-$logo_url = "/G/educ.jpeg";
+$logo_url = getSchoolLogoDataUri($conn) ?: '../educ.jpeg';
 ?>
 
 <div class="container py-4 text-center">

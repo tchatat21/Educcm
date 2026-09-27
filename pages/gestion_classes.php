@@ -28,12 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Requête avec comptage d'élèves
-$classes_result = $conn->query("
-    SELECT c.*, (SELECT COUNT(*) FROM inscriptions i WHERE i.classe_id = c.id) as nb_eleves 
+// Les effectifs affichés correspondent uniquement aux inscriptions de l'année en cours.
+$annee_scolaire = getCurrentSchoolYear();
+$classes_stmt = $conn->prepare("
+    SELECT c.*, (SELECT COUNT(*) FROM inscriptions i WHERE i.classe_id = c.id AND i.annee_scolaire = ?) as nb_eleves
     FROM classes c 
     ORDER BY niveau, nom
 ");
+$classes_stmt->bind_param('s', $annee_scolaire);
+$classes_stmt->execute();
+$classes_result = $classes_stmt->get_result();
 ?>
 
 <div class="row mb-4 align-items-center">
@@ -42,6 +46,9 @@ $classes_result = $conn->query("
         <p class="text-muted small mb-0">Organisez les niveaux et effectifs de l'établissement.</p>
     </div>
     <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <a href="pages/imprimer_listes_classes.php" class="btn btn-outline-primary rounded-pill shadow-sm px-4 me-2">
+            <i class="bi bi-printer-fill me-2"></i>Imprimer toutes les listes
+        </a>
         <button class="btn btn-primary rounded-pill shadow-sm px-4" data-bs-toggle="collapse" data-bs-target="#addClassForm">
             <i class="bi bi-plus-lg me-2"></i> Nouvelle Classe
         </button>
@@ -102,6 +109,9 @@ $classes_result = $conn->query("
                                 </div>
                             </td>
                             <td class="text-end pe-4">
+                                <a href="pages/imprimer_liste_classe.php?classe_id=<?php echo (int)$c['id']; ?>" class="btn btn-sm btn-outline-primary border-0" title="Imprimer la liste de cette classe" aria-label="Imprimer la liste de cette classe">
+                                    <i class="bi bi-printer-fill"></i>
+                                </a>
                                 <form action="pages/gestion_classes.php" method="POST" class="d-inline" onsubmit="return confirm('Supprimer cette classe ?');">
                                     <input type="hidden" name="classe_id" value="<?php echo $c['id']; ?>">
                                     <button type="submit" name="delete_class" class="btn btn-sm btn-outline-danger border-0">

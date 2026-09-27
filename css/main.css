@@ -17,7 +17,13 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    overflow-x: hidden;
 }
+
+*, *::before, *::after { box-sizing: border-box; }
+img, video, canvas { max-width: 100%; }
+input, select, textarea { max-width: 100%; }
+main, main > .card, main > .card > .card-body { min-width: 0; }
 
 main {
     flex: 1;
@@ -39,7 +45,7 @@ main {
 /* NAVIGATION */
 .navbar {
     background-color: var(--educ-navy) !important;
-    padding: 1rem 1.5rem;
+    padding: 0.7rem clamp(0.75rem, 2vw, 1.5rem);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
@@ -63,6 +69,47 @@ main {
     background: rgba(255,255,255,0.1);
     border-radius: 8px;
 }
+
+.navbar .navbar-nav { gap: 0.15rem; }
+.navbar .nav-link { border-radius: 8px; white-space: normal; }
+.navbar .report-nav-link {
+    align-items: center;
+    background: rgba(57, 169, 195, 0.16);
+    border: 1px solid rgba(110, 198, 208, 0.48);
+    color: #e9fcff;
+    display: inline-flex;
+    gap: 0.4rem;
+    font-weight: 700;
+}
+.navbar .report-nav-link:hover,
+.navbar .report-nav-link.active {
+    background: var(--educ-turquoise);
+    border-color: var(--educ-turquoise);
+    color: #102c39 !important;
+}
+.navbar .navbar-collapse { min-width: 0; }
+
+.page-titlebar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    justify-content: space-between;
+}
+.page-titlebar .page-title { font-size: 1.8rem; line-height: 1.2; margin: 0; }
+.page-identity { max-width: 100%; overflow-wrap: anywhere; }
+
+main .table-responsive {
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    overflow-x: auto;
+}
+main table.table { min-width: 38rem; }
+main .table-responsive > table.table { min-width: 38rem; }
+main .table td, main .table th { overflow-wrap: anywhere; }
+main form .row > [class*="col-"] { min-width: 0; }
+main .form-control, main .form-select { min-width: 0; }
+main pre, main code { overflow-wrap: anywhere; white-space: pre-wrap; }
 
 /* CARTES (CARDS) */
 .card {
@@ -141,4 +188,36 @@ main {
 .display-6 {
     font-weight: 800;
     color: var(--educ-navy);
+}
+
+@media (max-width: 991.98px) {
+    .navbar .navbar-collapse {
+        max-height: calc(100dvh - 72px);
+        overflow-y: auto;
+        padding-top: 0.5rem;
+    }
+    .navbar .navbar-nav { align-items: stretch; }
+    .navbar .nav-link { padding: 0.65rem 0.8rem !important; }
+    .navbar .report-nav-link { display: flex; }
+}
+
+@media (max-width: 767.98px) {
+    main.container-fluid { padding-left: 0.75rem; padding-right: 0.75rem; }
+    main.mt-4 { margin-top: 0.75rem !important; }
+    main > .page-titlebar { padding: 0.9rem !important; }
+    .page-titlebar .page-title { font-size: 1.35rem; }
+    .page-titlebar .page-identity { display: none; }
+    main > .card > .card-body { padding: 0.85rem !important; }
+    .card-header { padding: 0.9rem; }
+    .table thead th, .table tbody td { padding: 0.65rem; }
+    .btn { max-width: 100%; }
+    footer .container { padding-left: 0.75rem; padding-right: 0.75rem; }
+}
+
+@media (max-width: 420px) {
+    .navbar { padding-left: 0.65rem; padding-right: 0.65rem; }
+    .navbar-brand { font-size: 1rem; }
+    .navbar-brand img { height: 28px !important; width: 28px !important; }
+    main > .page-titlebar { margin-bottom: 0.75rem !important; }
+    main .table-responsive > table.table { min-width: 34rem; }
 }

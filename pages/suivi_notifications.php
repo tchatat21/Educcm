@@ -8,7 +8,7 @@ if ($_SESSION['user_role'] !== 'administrateur') {
 }
 
 $notifications = $conn->query("
-    SELECT n.*, u.nom as parent_nom, u.prenom as parent_prenom 
+    SELECT n.*, u.nom AS destinataire_nom, u.prenom AS destinataire_prenom, u.role AS destinataire_role
     FROM notifications n 
     JOIN utilisateurs u ON n.recipient_id = u.id 
     ORDER BY n.date_creation DESC 
@@ -18,8 +18,8 @@ $notifications = $conn->query("
 
 <div class="row mb-4 align-items-center">
     <div class="col-md-6">
-        <h3 class="fw-bold text-navy mb-0">Notifications aux Parents</h3>
-        <p class="text-muted small">Historique des alertes envoyées par le système.</p>
+        <h3 class="fw-bold text-navy mb-0">Historique des notifications</h3>
+        <p class="text-muted small">Alertes du système et messages diffusés aux utilisateurs.</p>
     </div>
 </div>
 
@@ -42,9 +42,10 @@ $notifications = $conn->query("
                     ?>
                         <tr>
                             <td class="ps-4">
-                                <div class="fw-bold"><?php echo htmlspecialchars($n['parent_prenom'].' '.$n['parent_nom']); ?></div>
+                                <div class="fw-bold"><?php echo htmlspecialchars($n['destinataire_prenom'].' '.$n['destinataire_nom']); ?></div>
+                                <div class="small text-muted"><?php echo htmlspecialchars(ucfirst($n['destinataire_role'])); ?></div>
                             </td>
-                            <td><div class="small text-muted" style="max-width: 400px;"><?php echo strip_tags($n['message'], '<b><strong>'); ?></div></td>
+                            <td><div class="small text-muted" style="max-width: 400px;"><?php echo htmlspecialchars(strip_tags($n['message'])); ?></div></td>
                             <td><span class="badge bg-light text-dark border"><?php echo strtoupper($n['type']); ?></span></td>
                             <td class="small"><?php echo date('d/m H:i', strtotime($n['date_creation'])); ?></td>
                             <td class="text-end pe-4">

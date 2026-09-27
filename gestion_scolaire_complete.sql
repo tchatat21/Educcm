@@ -365,7 +365,7 @@ DROP TABLE IF EXISTS `settings`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `settings` (
   `setting_key` varchar(50) NOT NULL,
-  `setting_value` text DEFAULT NULL,
+  `setting_value` longtext DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`setting_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -377,7 +377,7 @@ CREATE TABLE `settings` (
 
 LOCK TABLES `settings` WRITE;
 /*!40000 ALTER TABLE `settings` DISABLE KEYS */;
-INSERT INTO `settings` VALUES ('school_stamp','','2026-03-11 21:16:12'),('stamp_right','2','2026-03-11 21:16:12'),('stamp_size','12','2026-03-11 21:16:12'),('stamp_top','-8','2026-03-11 21:16:12');
+INSERT INTO `settings` VALUES ('school_logo_data','','2026-03-11 21:16:12'),('school_name','EDUC.CM','2026-03-11 21:16:12'),('school_stamp','','2026-03-11 21:16:12'),('stamp_right','2','2026-03-11 21:16:12'),('stamp_size','12','2026-03-11 21:16:12'),('stamp_top','-8','2026-03-11 21:16:12');
 /*!40000 ALTER TABLE `settings` ENABLE KEYS */;
 UNLOCK TABLES;
 

@@ -114,7 +114,7 @@ $jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
             $photo_name = $selected_child['photo'];
             $photo_path = __DIR__ . "/../uploads/photos/" . $photo_name;
             if (!empty($photo_name) && $photo_name !== 'default_avatar.png' && file_exists($photo_path)) {
-                $avatar = "/G/uploads/photos/" . $photo_name;
+                $avatar = "../uploads/view_file.php?folder=photos&file=" . rawurlencode($photo_name);
             } else {
                 $avatar = "https://ui-avatars.com/api/?name=" . urlencode($selected_child['prenom'] . ' ' . $selected_child['nom']) . "&background=223E6F&color=fff";
             }

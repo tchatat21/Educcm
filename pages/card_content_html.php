@@ -27,7 +27,7 @@
                 $photo_path = "../uploads/photos/" . $photo_name;
                 
                 if (!empty($photo_name) && $photo_name !== 'default_avatar.png' && file_exists($photo_path)) {
-                    $src_photo = "/G/uploads/photos/" . $photo_name;
+                    $src_photo = "../uploads/view_file.php?folder=photos&file=" . rawurlencode($photo_name);
                 } else {
                     // Avatar par défaut stylé avec les initiales
                     $src_photo = "https://ui-avatars.com/api/?name=" . urlencode($eleve['prenom'] . ' ' . $eleve['nom']) . "&background=223E6F&color=fff&size=300";

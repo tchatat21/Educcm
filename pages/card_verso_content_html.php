@@ -7,7 +7,7 @@ if (isset($conn)) {
         $card_settings[$s['setting_key']] = $s['setting_value'];
     }
 }
-$stamp_img = !empty($card_settings['school_stamp']) ? "/G/uploads/school/" . $card_settings['school_stamp'] : "";
+$stamp_img = !empty($card_settings['school_stamp']) ? "../uploads/view_file.php?folder=school&file=" . rawurlencode($card_settings['school_stamp']) : "";
 ?>
 
 <!-- CONTENU DU VERSO DE LA CARTE AVANT-GARDE -->

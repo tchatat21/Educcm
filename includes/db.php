@@ -58,6 +58,38 @@ $conn->query("CREATE TABLE IF NOT EXISTS `settings` (
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+// Création de la table pour le suivi des validations automatisées des inscriptions
+$conn->query("CREATE TABLE IF NOT EXISTS `registration_validations` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `role` VARCHAR(30) NOT NULL,
+    `validation_score` INT NOT NULL,
+    `is_valid` TINYINT(1) NOT NULL DEFAULT 0,
+    `checks` JSON DEFAULT NULL,
+    `issues` JSON DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `unique_user_validation` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$conn->query("CREATE TABLE IF NOT EXISTS `parents_eleves` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `parent_id` INT NOT NULL,
+    `eleve_id` INT NOT NULL,
+    UNIQUE KEY `unique_parent_eleve` (`parent_id`, `eleve_id`),
+    KEY `eleve_id` (`eleve_id`),
+    CONSTRAINT `fk_parents_eleves_parent` FOREIGN KEY (`parent_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_parents_eleves_eleve` FOREIGN KEY (`eleve_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+$conn->query("CREATE TABLE IF NOT EXISTS `parents_enfants` (
+    `parent_id` INT NOT NULL,
+    `enfant_id` INT NOT NULL,
+    PRIMARY KEY (`parent_id`, `enfant_id`),
+    KEY `enfant_id` (`enfant_id`),
+    CONSTRAINT `fk_parents_enfants_parent` FOREIGN KEY (`parent_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_parents_enfants_enfant` FOREIGN KEY (`enfant_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
 // Initialisation des paramètres du cachet si vide
 $default_settings = [
     'school_stamp' => '',

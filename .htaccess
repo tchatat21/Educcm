@@ -1,0 +1,11 @@
+RewriteEngine On
+
+# Compatibilité avec les anciens chemins /G/... utilisés dans le projet
+RewriteRule ^G/(.*)$ /Educcm/$1 [L,QSA]
+
+# Empêche l'affichage des fichiers sensibles
+Options -Indexes
+
+<FilesMatch "(\.env|\.git|\.htaccess|composer\.json|composer\.lock|schema\.sql|gestion_scolaire_complete\.sql)$">
+    Require all denied
+</FilesMatch>

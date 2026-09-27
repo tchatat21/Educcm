@@ -5,6 +5,43 @@ require_once 'includes/db.php';
 
 $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['user_role'];
+
+$dashboard_message = '';
+$dashboard_error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user_role === 'parent' && isset($_POST['add_child_link'])) {
+    $selectedClassIds = array_map('intval', $_POST['classe_enfant_ids'] ?? []);
+    $selectedClassIds = array_values(array_unique(array_filter($selectedClassIds, fn($id) => $id > 0)));
+    $selectedChildIds = array_map('intval', $_POST['enfant_ids'] ?? []);
+    $selectedChildIds = array_values(array_unique(array_filter($selectedChildIds, fn($id) => $id > 0)));
+
+    if (empty($selectedClassIds)) {
+        $dashboard_error = 'Veuillez choisir au moins une classe.';
+    } elseif (empty($selectedChildIds)) {
+        $dashboard_error = 'Veuillez choisir au moins un enfant.';
+    } else {
+        $valid_child_ids = [];
+        $in_clause = implode(',', array_fill(0, count($selectedChildIds), '?'));
+        $types = str_repeat('i', count($selectedChildIds));
+        $stmt_validate = $conn->prepare("SELECT u.id FROM utilisateurs u JOIN inscriptions i ON i.eleve_id = u.id WHERE u.role = 'eleve' AND u.id IN ($in_clause) AND i.classe_id IN (" . implode(',', $selectedClassIds) . ")");
+        $stmt_validate->bind_param($types, ...$selectedChildIds);
+        $stmt_validate->execute();
+        $result_validate = $stmt_validate->get_result();
+        while ($row = $result_validate->fetch_assoc()) {
+            $valid_child_ids[] = (int)$row['id'];
+        }
+        $stmt_validate->close();
+
+        if (count($valid_child_ids) !== count($selectedChildIds)) {
+            $dashboard_error = 'Certains enfants ne correspondent pas aux classes sélectionnées.';
+        } else {
+            foreach ($selectedChildIds as $child_id) {
+                $conn->query("INSERT IGNORE INTO parents_eleves (parent_id, eleve_id) VALUES ($user_id, $child_id)");
+            }
+            $dashboard_message = 'Les enfants ont bien été ajoutés à votre compte.';
+        }
+    }
+}
 ?>
 
 <div class="row mb-4">
@@ -22,6 +59,13 @@ $user_role = $_SESSION['user_role'];
         </div>
     </div>
 </div>
+
+<?php if ($user_role === 'parent' && ($dashboard_message || $dashboard_error)): ?>
+    <div class="alert <?php echo $dashboard_message ? 'alert-success' : 'alert-danger'; ?> mt-3">
+        <i class="bi <?php echo $dashboard_message ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'; ?> me-2"></i>
+        <?php echo htmlspecialchars($dashboard_message ?: $dashboard_error); ?>
+    </div>
+<?php endif; ?>
 
 <?php
 switch ($user_role) {

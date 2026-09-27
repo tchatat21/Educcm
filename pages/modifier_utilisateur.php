@@ -105,9 +105,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     // Liaisons Parents/Enfants (Reste inchangé)
     elseif (isset($_POST['link_child'])) {
-        $enfant_id = (int)$_POST['enfant_id'];
-        $conn->query("INSERT IGNORE INTO parents_eleves (parent_id, eleve_id) VALUES ($user_id, $enfant_id)");
-        $message = "Enfant lié avec succès.";
+        $selectedClassIds = array_map('intval', $_POST['classe_ids'] ?? []);
+        $selectedClassIds = array_values(array_unique(array_filter($selectedClassIds, fn($id) => $id > 0)));
+        $selectedChildIds = array_map('intval', $_POST['enfant_ids'] ?? []);
+        $selectedChildIds = array_values(array_unique(array_filter($selectedChildIds, fn($id) => $id > 0)));
+
+        if (empty($selectedClassIds)) {
+            $error = "Veuillez choisir au moins une classe.";
+        } elseif (empty($selectedChildIds)) {
+            $error = "Veuillez choisir au moins un enfant.";
+        } else {
+            $valid_child_ids = [];
+            if (!empty($selectedChildIds)) {
+                $in_clause = implode(',', array_fill(0, count($selectedChildIds), '?'));
+                $types = str_repeat('i', count($selectedChildIds));
+                $stmt_validate = $conn->prepare("SELECT u.id FROM utilisateurs u JOIN inscriptions i ON i.eleve_id = u.id WHERE u.role = 'eleve' AND u.id IN ($in_clause) AND i.classe_id IN (" . implode(',', $selectedClassIds) . ")");
+                $stmt_validate->bind_param($types, ...$selectedChildIds);
+                $stmt_validate->execute();
+                $result_validate = $stmt_validate->get_result();
+                while ($row = $result_validate->fetch_assoc()) {
+                    $valid_child_ids[] = (int)$row['id'];
+                }
+                $stmt_validate->close();
+            }
+
+            if (count($valid_child_ids) !== count($selectedChildIds)) {
+                $error = "Certains enfants sélectionnés ne correspondent pas aux classes choisies.";
+            } else {
+                foreach ($selectedChildIds as $child_id) {
+                    $conn->query("INSERT IGNORE INTO parents_eleves (parent_id, eleve_id) VALUES ($user_id, $child_id)");
+                }
+                $message = "Les enfants ont été liés avec succès.";
+            }
+        }
     }
     elseif (isset($_POST['unlink_child'])) {
         $enfant_id = (int)$_POST['enfant_id'];
@@ -171,7 +201,7 @@ $linked_children = $conn->query("SELECT u.id, u.nom, u.prenom FROM utilisateurs 
                                 <label class="form-label">Photo de profil / Carte</label>
                                 <div class="d-flex align-items-center gap-3">
                                     <?php if ($user['photo']): ?>
-                                        <img src="/G/uploads/photos/<?php echo $user['photo']; ?>" class="rounded shadow-sm" style="width: 60px; height: 60px; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($user['nom']); ?>'">
+                                        <img src="../uploads/view_file.php?folder=photos&file=<?php echo rawurlencode($user['photo']); ?>" class="rounded shadow-sm" style="width: 60px; height: 60px; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($user['nom']); ?>'">
                                     <?php endif; ?>
                                     <input type="file" name="photo" class="form-control" accept="image/*">
                                 </div>
@@ -203,15 +233,28 @@ $linked_children = $conn->query("SELECT u.id, u.nom, u.prenom FROM utilisateurs 
                 <div class="card-header bg-dark text-white">Lier des enfants</div>
                 <div class="card-body">
                     <form action="pages/modifier_utilisateur.php?id=<?php echo $user_id; ?>" method="POST" class="row g-2 mb-4">
-                        <div class="col-md-9">
-                            <select name="enfant_id" class="form-select">
-                                <option value="">-- Choisir un élève --</option>
-                                <?php foreach($all_students as $s): ?>
-                                    <option value="<?php echo $s['id']; ?>"><?php echo $s['prenom'].' '.$s['nom']; ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Classe(s)</label>
+                            <div class="border rounded-3 p-3 bg-light" id="parent_class_checkbox_wrapper">
+                                <?php $classes_result2 = $conn->query("SELECT * FROM classes ORDER BY nom"); ?>
+                                <?php while ($classe = $classes_result2->fetch_assoc()): ?>
+                                    <label class="d-flex align-items-center gap-2 mb-2">
+                                        <input type="checkbox" class="form-check-input" name="classe_ids[]" value="<?php echo $classe['id']; ?>">
+                                        <span><?php echo htmlspecialchars($classe['nom'] . ' (' . $classe['niveau'] . ')'); ?></span>
+                                    </label>
+                                <?php endwhile; ?>
+                            </div>
+                            <small class="text-muted">Cliquez simplement sur les classes des enfants.</small>
                         </div>
-                        <div class="col-md-3"><button type="submit" name="link_child" class="btn btn-primary w-100">Lier</button></div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Enfants</label>
+                            <div class="border rounded-3 p-3 bg-light" id="parent_child_checkbox_wrapper">
+                                <div class="text-muted small">Sélectionnez d’abord une ou plusieurs classes.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" name="link_child" class="btn btn-primary w-100">Lier</button>
+                        </div>
                     </form>
                     <h6>Enfants liés :</h6>
                     <ul class="list-group">
@@ -231,5 +274,69 @@ $linked_children = $conn->query("SELECT u.id, u.nom, u.prenom FROM utilisateurs 
         </div>
     </div>
 </div>
+
+<script>
+const parentClassMap = <?php
+    $mapped_students = [];
+    $class_map_result = $conn->prepare("SELECT DISTINCT i.classe_id, u.id, CONCAT(u.prenom, ' ', u.nom) AS label FROM utilisateurs u JOIN inscriptions i ON i.eleve_id = u.id WHERE u.role = 'eleve' AND NOT EXISTS (SELECT 1 FROM parents_eleves pe WHERE pe.eleve_id = u.id AND pe.parent_id <> ?) ORDER BY i.classe_id, u.nom, u.prenom");
+    $class_map_result->bind_param('i', $user_id);
+    $class_map_result->execute();
+    $class_map_result = $class_map_result->get_result();
+    while ($student_row = $class_map_result->fetch_assoc()) {
+        $mapped_students[(string)$student_row['classe_id']][] = [
+            'id' => (int)$student_row['id'],
+            'label' => $student_row['label']
+        ];
+    }
+    echo json_encode($mapped_students, JSON_UNESCAPED_UNICODE);
+?>;
+
+function updateParentChildChoices() {
+    const classCheckboxes = document.querySelectorAll('input[name="classe_ids[]"]');
+    const childWrapper = document.getElementById('parent_child_checkbox_wrapper');
+    if (!childWrapper) return;
+
+    const selectedClasses = Array.from(classCheckboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+
+    const children = [];
+    selectedClasses.forEach(function(classId) {
+        (parentClassMap[classId] || []).forEach(function(student) {
+            children.push(student);
+        });
+    });
+
+    childWrapper.innerHTML = '';
+    if (children.length === 0) {
+        childWrapper.innerHTML = '<div class="text-muted small">Aucun enfant disponible pour les classes sélectionnées.<br><span class="text-secondary">Tous les élèves de ces classes sont déjà liés à un parent.</span></div>';
+        return;
+    }
+
+    const uniqueChildren = [];
+    const seen = new Set();
+    children.forEach(function(student) {
+        if (!seen.has(String(student.id))) {
+            seen.add(String(student.id));
+            uniqueChildren.push(student);
+        }
+    });
+
+    uniqueChildren.forEach(function(student) {
+        const label = document.createElement('label');
+        label.className = 'd-flex align-items-center gap-2 mb-2';
+        label.innerHTML = '<input type="checkbox" class="form-check-input" name="enfant_ids[]" value="' + student.id + '"> <span>' + student.label + '</span>';
+        childWrapper.appendChild(label);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const classCheckboxes = document.querySelectorAll('input[name="classe_ids[]"]');
+    classCheckboxes.forEach(function(item) {
+        item.addEventListener('change', updateParentChildChoices);
+    });
+    updateParentChildChoices();
+});
+</script>
 
 <?php include '../includes/footer.php'; ?>

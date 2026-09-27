@@ -10,6 +10,7 @@ if (isset($_SESSION['user_id'])) {
 }
 
 require_once 'includes/db.php';
+require_once 'includes/inscription_validation_bot.php';
 
 $error = '';
 $success = '';
@@ -20,6 +21,22 @@ $res_classes = $conn->query("SELECT id, nom, niveau FROM classes ORDER BY niveau
 if ($res_classes) {
     while ($c = $res_classes->fetch_assoc()) {
         $classes_list[] = $c;
+    }
+}
+
+$students_by_class = [];
+$res_students = $conn->query("SELECT DISTINCT u.id, u.nom, u.prenom, i.classe_id, c.nom AS classe_nom FROM utilisateurs u LEFT JOIN inscriptions i ON i.eleve_id = u.id LEFT JOIN classes c ON c.id = i.classe_id WHERE u.role = 'eleve' AND NOT EXISTS (SELECT 1 FROM parents_eleves pe WHERE pe.eleve_id = u.id) ORDER BY i.classe_id, u.nom, u.prenom");
+if ($res_students) {
+    while ($student = $res_students->fetch_assoc()) {
+        $class_id = (int)($student['classe_id'] ?? 0);
+        if ($class_id > 0) {
+            $students_by_class[$class_id][] = [
+                'id' => (int)$student['id'],
+                'nom' => $student['nom'],
+                'prenom' => $student['prenom'],
+                'label' => $student['prenom'] . ' ' . $student['nom'] . ' (' . $student['classe_nom'] . ')',
+            ];
+        }
     }
 }
 
@@ -74,6 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $justificatif_name = null;
             $enfants_noms = null;
             $classe_id = 0;
+            $selected_child_ids = [];
 
             if (empty($error)) {
                 if ($role === 'eleve') {
@@ -90,12 +108,46 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         }
                     }
                 } elseif ($role === 'parent') {
-                    $enfants_noms = trim($_POST['enfants_noms'] ?? '');
-                    if (empty($enfants_noms)) {
-                        $error = "Veuillez renseigner le nom et prénom de votre ou vos enfant(s).";
-                    } elseif (!isset($_FILES['justificatif_parent']) || $_FILES['justificatif_parent']['error'] !== UPLOAD_ERR_OK) {
-                        $error = "La photo de votre CNI (Carte Nationale d'Identité) est obligatoire.";
+                    $selected_class_ids = array_map('intval', (array)($_POST['classe_enfant_ids'] ?? []));
+                    $selected_class_ids = array_values(array_unique(array_filter($selected_class_ids, fn($id) => $id > 0)));
+                    $selected_child_ids = array_map('intval', (array)($_POST['enfant_ids'] ?? []));
+                    $selected_child_ids = array_values(array_unique(array_filter($selected_child_ids, fn($id) => $id > 0)));
+
+                    if (empty($selected_class_ids)) {
+                        $error = "Veuillez sélectionner au moins une classe pour vos enfants.";
+                    } elseif (empty($selected_child_ids)) {
+                        $error = "Veuillez sélectionner au moins un enfant à relier.";
                     } else {
+                        $in_clause = implode(',', array_fill(0, count($selected_child_ids), '?'));
+                        $types = str_repeat('i', count($selected_child_ids));
+
+                        $stmt_child = $conn->prepare("SELECT u.id, u.nom, u.prenom, i.classe_id FROM utilisateurs u LEFT JOIN inscriptions i ON i.eleve_id = u.id WHERE u.role = 'eleve' AND u.id IN ($in_clause)");
+                        $stmt_child->bind_param($types, ...$selected_child_ids);
+                        $stmt_child->execute();
+                        $result_children = $stmt_child->get_result();
+                        $valid_children = [];
+                        $child_names = [];
+
+                        while ($child = $result_children->fetch_assoc()) {
+                            $child_class_id = (int)($child['classe_id'] ?? 0);
+                            if (in_array($child_class_id, $selected_class_ids, true)) {
+                                $valid_children[] = (int)$child['id'];
+                                $child_names[] = trim($child['prenom'] . ' ' . $child['nom']);
+                            }
+                        }
+
+                        $stmt_child->close();
+
+                        if (count($valid_children) !== count($selected_child_ids)) {
+                            $error = "Un ou plusieurs enfants sélectionnés ne correspondent pas aux classes choisies.";
+                        } else {
+                            $enfants_noms = implode(', ', $child_names);
+                        }
+                    }
+
+                    if (empty($error) && (!isset($_FILES['justificatif_parent']) || $_FILES['justificatif_parent']['error'] !== UPLOAD_ERR_OK)) {
+                        $error = "La photo de votre CNI (Carte Nationale d'Identité) est obligatoire.";
+                    } elseif (empty($error)) {
                         $file_ext = strtolower(pathinfo($_FILES['justificatif_parent']['name'], PATHINFO_EXTENSION));
                         $allowed_doc_exts = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
                         if (!in_array($file_ext, $allowed_doc_exts)) {
@@ -181,7 +233,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             $stmt_ins->close();
                         }
 
-                        // Redirection vers login avec message de confirmation
+                        if ($role === 'parent' && !empty($selected_child_ids)) {
+                            foreach ($selected_child_ids as $child_id) {
+                                $stmt_link = $conn->prepare("INSERT IGNORE INTO parents_eleves (parent_id, eleve_id) VALUES (?, ?)");
+                                $stmt_link->bind_param("ii", $new_user_id, $child_id);
+                                $stmt_link->execute();
+                                $stmt_link->close();
+                            }
+                        }
+
+                        $bot = new InscriptionValidationBot();
+                        $validation_path = $upload_justif_dir . $justificatif_filename;
+                        $photo_path = $upload_photos_dir . $photo_filename;
+                        $result = $bot->analyzeRegistration($conn, $new_user_id, $role, $photo_path, $validation_path);
+
+                        if ($result['valid']) {
+                            $conn->query("UPDATE utilisateurs SET statut_compte = 'actif' WHERE id = " . (int)$new_user_id);
+                            $success = "Inscription validée automatiquement par le bot. Un message a été envoyé à l’administrateur.";
+                        } else {
+                            $conn->query("UPDATE utilisateurs SET statut_compte = 'en_attente' WHERE id = " . (int)$new_user_id);
+                            $error = "L’inscription a été enregistrée, mais le bot a détecté un problème sur les documents. L’administration va vérifier le dossier.";
+                        }
+
                         header("Location: login.php?registered=1");
                         exit;
                     } else {
@@ -371,6 +444,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <div id="section_parent" class="role-specific mb-4 d-none">
                     <div class="section-header text-success"><i class="bi bi-people me-1"></i> 3. Spécifications pour Parent</div>
                     <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">
+                                Classe(s) de vos enfants <span class="text-danger">*</span>
+                            </label>
+                            <div class="border rounded-3 p-3 bg-light" id="field_classe_enfant_wrapper">
+                                <?php foreach ($classes_list as $cls): ?>
+                                    <label class="d-flex align-items-center gap-2 mb-2">
+                                        <input type="checkbox" class="form-check-input" name="classe_enfant_ids[]" value="<?php echo $cls['id']; ?>" data-class-id="<?php echo $cls['id']; ?>" <?php echo (isset($_POST['classe_enfant_ids']) && in_array((string)$cls['id'], array_map('strval', (array)$_POST['classe_enfant_ids'], []), true)) ? 'checked' : ''; ?>>
+                                        <span><?php echo htmlspecialchars($cls['nom'] . ' (' . $cls['niveau'] . ')'); ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                            <small class="text-muted">Cliquez simplement sur les classes concernées.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">
+                                Enfant(s) à relier <span class="text-danger">*</span>
+                            </label>
+                            <div class="border rounded-3 p-3 bg-light" id="field_enfant_wrapper">
+                                <div class="text-muted small" id="field_enfant_empty">Sélectionnez d’abord une ou plusieurs classes.</div>
+                            </div>
+                        </div>
                         <div class="col-12">
                             <label class="form-label small fw-bold">
                                 Photo de votre CNI (Carte Nationale d'Identité) <span class="text-danger">*</span>
@@ -379,11 +474,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             <input type="file" class="form-control rounded-3" name="justificatif_parent" id="field_cni" accept=".jpg,.jpeg,.png,.webp,.pdf">
                         </div>
                         <div class="col-12">
-                            <label class="form-label small fw-bold">
-                                Nom(s) et Prénom(s) de votre ou vos enfant(s) <span class="text-danger">*</span>
-                            </label>
-                            <textarea class="form-control rounded-3" name="enfants_noms" id="field_enfants" rows="2" placeholder="Ex: Dupont Leo (Seconde A), Dupont Marie (Première B)"><?php echo htmlspecialchars($_POST['enfants_noms'] ?? ''); ?></textarea>
-                            <small class="text-muted">Indiquez les noms complets et si possible la classe de vos enfants pour faciliter la liaison par l'administration.</small>
+                            <label class="form-label small fw-bold">Nom(s) et Prénom(s) de votre ou vos enfant(s)</label>
+                            <textarea class="form-control rounded-3" name="enfants_noms" id="field_enfants" rows="2" placeholder="Sera renseigné automatiquement à partir des enfants sélectionnés."><?php echo htmlspecialchars($_POST['enfants_noms'] ?? ''); ?></textarea>
+                            <small class="text-muted">Le compte du parent sera relié directement à tous les enfants sélectionnés dans les classes choisies.</small>
                         </div>
                     </div>
                 </div>
@@ -421,6 +514,49 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </div>
 
 <script>
+const studentsByClass = <?php echo json_encode($students_by_class, JSON_UNESCAPED_UNICODE); ?>;
+
+function updateParentChildOptions() {
+    const classCheckboxes = document.querySelectorAll('input[name="classe_enfant_ids[]"]');
+    const childWrapper = document.getElementById('field_enfant_wrapper');
+    const emptyState = document.getElementById('field_enfant_empty');
+    if (!childWrapper) return;
+
+    const selectedClasses = Array.from(classCheckboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+
+    const children = [];
+    selectedClasses.forEach(function(classId) {
+        (studentsByClass[classId] || []).forEach(function(student) {
+            children.push(student);
+        });
+    });
+
+    childWrapper.innerHTML = '';
+
+    if (children.length === 0) {
+        childWrapper.innerHTML = '<div class="text-muted small">Aucun enfant disponible pour les classes sélectionnées.<br><span class="text-secondary">Tous les élèves de ces classes sont déjà liés à un parent.</span></div>';
+        return;
+    }
+
+    const uniqueChildren = [];
+    const seen = new Set();
+    children.forEach(function(student) {
+        if (!seen.has(String(student.id))) {
+            seen.add(String(student.id));
+            uniqueChildren.push(student);
+        }
+    });
+
+    uniqueChildren.forEach(function(student) {
+        const label = document.createElement('label');
+        label.className = 'd-flex align-items-center gap-2 mb-2';
+        label.innerHTML = '<input type="checkbox" class="form-check-input" name="enfant_ids[]" value="' + student.id + '"> <span>' + student.label + '</span>';
+        childWrapper.appendChild(label);
+    });
+}
+
 function onRoleChange() {
     const roleEleve = document.getElementById('role_eleve').checked;
     const roleParent = document.getElementById('role_parent').checked;
@@ -435,6 +571,8 @@ function onRoleChange() {
     const fieldCni = document.getElementById('field_cni');
     const fieldEnfants = document.getElementById('field_enfants');
     const fieldAttestation = document.getElementById('field_attestation');
+    const fieldClasseEnfant = document.getElementById('field_classe_enfant');
+    const fieldEnfant = document.getElementById('field_enfant');
 
     if (roleEleve) {
         secEleve.classList.remove('d-none');
@@ -446,6 +584,8 @@ function onRoleChange() {
         if (fieldCni) fieldCni.required = false;
         if (fieldEnfants) fieldEnfants.required = false;
         if (fieldAttestation) fieldAttestation.required = false;
+        if (fieldClasseEnfant) fieldClasseEnfant.required = false;
+        if (fieldEnfant) fieldEnfant.required = false;
     } else if (roleParent) {
         secEleve.classList.add('d-none');
         secParent.classList.remove('d-none');
@@ -454,8 +594,11 @@ function onRoleChange() {
         if (fieldClasse) fieldClasse.required = false;
         if (fieldBulletin) fieldBulletin.required = false;
         if (fieldCni) fieldCni.required = true;
-        if (fieldEnfants) fieldEnfants.required = true;
+        if (fieldEnfants) fieldEnfants.required = false;
         if (fieldAttestation) fieldAttestation.required = false;
+        if (fieldClasseEnfant) fieldClasseEnfant.required = true;
+        if (fieldEnfant) fieldEnfant.required = true;
+        updateParentChildOptions();
     } else if (roleEnseignant) {
         secEleve.classList.add('d-none');
         secParent.classList.add('d-none');
@@ -466,11 +609,20 @@ function onRoleChange() {
         if (fieldCni) fieldCni.required = false;
         if (fieldEnfants) fieldEnfants.required = false;
         if (fieldAttestation) fieldAttestation.required = true;
+        if (fieldClasseEnfant) fieldClasseEnfant.required = false;
+        if (fieldEnfant) fieldEnfant.required = false;
     }
 }
 
 // Initialiser au chargement
-document.addEventListener('DOMContentLoaded', onRoleChange);
+document.addEventListener('DOMContentLoaded', function() {
+    const classCheckboxes = document.querySelectorAll('input[name="classe_enfant_ids[]"]');
+    classCheckboxes.forEach(function(item) {
+        item.addEventListener('change', updateParentChildOptions);
+    });
+    onRoleChange();
+    updateParentChildOptions();
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
